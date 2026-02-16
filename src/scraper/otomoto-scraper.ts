@@ -17,6 +17,7 @@ export async function scrapeOtomoto(params: SearchParams, maxPages: number = MAX
   try {
     browser = await puppeteer.launch({
       headless: true,
+      executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || undefined,
       args: [
         '--no-sandbox',
         '--disable-setuid-sandbox',
