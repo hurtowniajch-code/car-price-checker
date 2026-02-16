@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Wycena Samochodu - Otomoto</title>
+  <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>Wycena Samochodu</h1>
+    </header>
+
+    <form id="search-form">
+      <div class="form-section">
+        <h2>Wymagane</h2>
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="brand">Marka *</label>
+            <select id="brand" name="brand" required>
+              <option value="">-- wybierz markę --</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="model">Model *</label>
+            <select id="model" name="model" required>
+              <option value="">-- najpierw wybierz markę --</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="generation">Generacja</label>
+            <select id="generation" name="generation" disabled>
+              <option value="">-- najpierw wybierz model --</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="year">Rok produkcji</label>
+            <input type="number" id="year" name="year" min="1990" max="2026" placeholder="np. 2010">
+            <div class="year-range-row">
+              <label for="yearRange">± lat:</label>
+              <select id="yearRange" name="yearRange">
+                <option value="0">0 (dokładny)</option>
+                <option value="1" selected>1</option>
+                <option value="2">2</option>
+                <option value="3">3</option>
+                <option value="4">4</option>
+                <option value="5">5</option>
+                <option value="6">6</option>
+                <option value="7">7</option>
+                <option value="8">8</option>
+                <option value="9">9</option>
+                <option value="10">10</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="mileage">Przebieg (tys. km)</label>
+            <input type="number" id="mileage" name="mileage" min="0" step="1" placeholder="np. 125">
+            <div class="year-range-row">
+              <label for="mileageRange">± tys. km:</label>
+              <select id="mileageRange" name="mileageRange">
+                <option value="1">1</option>
+                <option value="2">2</option>
+                <option value="5">5</option>
+                <option value="10">10</option>
+                <option value="15">15</option>
+                <option value="25" selected>25</option>
+                <option value="30">30</option>
+                <option value="35">35</option>
+                <option value="50">50</option>
+                <option value="60">60</option>
+                <option value="70">70</option>
+                <option value="80">80</option>
+                <option value="90">90</option>
+                <option value="100">100</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-section">
+        <div class="section-header">
+          <h2>Opcjonalne <span class="hint">(dla dokładniejszych wyników)</span></h2>
+          <button type="button" id="fetch-options-btn" class="btn-secondary">Pobierz dane z Otomoto</button>
+        </div>
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="fuelType">Rodzaj paliwa</label>
+            <select id="fuelType" name="fuelType">
+              <option value="">-- dowolny --</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="engineCapacity">Pojemność (ccm)</label>
+            <select id="engineCapacity" name="engineCapacity">
+              <option value="">-- dowolna --</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="version">Wersja</label>
+            <input type="text" id="version" name="version" placeholder="np. luxury, s line">
+          </div>
+          <div class="form-group">
+            <label for="power">Moc (KM)</label>
+            <select id="power" name="power">
+              <option value="">-- dowolna --</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="transmission">Skrzynia biegów</label>
+            <select id="transmission" name="transmission">
+              <option value="">-- dowolna --</option>
+              <option value="Manual">Manualna</option>
+              <option value="Automatic">Automatyczna</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="damaged">Stan</label>
+            <select id="damaged" name="damaged">
+              <option value="undamaged" selected>Nieuszkodzony</option>
+              <option value="damaged">Uszkodzony</option>
+              <option value="">Dowolny</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="trimPercent">Odrzuć skrajne</label>
+            <select id="trimPercent" name="trimPercent">
+              <option value="0">0% (wszystkie)</option>
+              <option value="5" selected>5%</option>
+              <option value="10">10%</option>
+              <option value="20">20%</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <button type="submit" id="submit-btn">Sprawdź cenę na Otomoto</button>
+    </form>
+
+    <!-- Loading overlay -->
+    <div id="loading" class="loading hidden">
+      <div class="spinner"></div>
+      <p>Szukam na otomoto.pl...</p>
+      <p class="loading-hint">To może potrwać 15-30 sekund</p>
+    </div>
+
+    <!-- Error message -->
+    <div id="error" class="error hidden"></div>
+
+    <!-- Results -->
+    <div id="results" class="results hidden">
+      <h2>Wyniki wyceny</h2>
+
+      <div id="stats-cards" class="stats-cards">
+        <div class="stat-card">
+          <span class="stat-label">Znaleziono</span>
+          <span class="stat-value" id="stat-count">0</span>
+          <span class="stat-unit">ogłoszeń</span>
+        </div>
+        <div class="stat-card stat-min">
+          <span class="stat-label">Minimum</span>
+          <span class="stat-value" id="stat-min">0</span>
+        </div>
+        <div class="stat-card stat-max">
+          <span class="stat-label">Maksimum</span>
+          <span class="stat-value" id="stat-max">0</span>
+        </div>
+        <div class="stat-card stat-avg">
+          <span class="stat-label">Średnia</span>
+          <span class="stat-value" id="stat-avg">0</span>
+        </div>
+        <div class="stat-card stat-median">
+          <span class="stat-label">Mediana</span>
+          <span class="stat-value" id="stat-median">0</span>
+        </div>
+      </div>
+
+      <div class="results-actions">
+        <a id="otomoto-link" href="#" target="_blank" rel="noopener" class="btn-link">
+          Zobacz na Otomoto.pl
+        </a>
+      </div>
+
+      <div class="table-wrapper">
+        <table id="listings-table">
+          <thead>
+            <tr>
+              <th data-sort="title">Tytuł</th>
+              <th data-sort="price" class="sortable active">Cena ▲</th>
+              <th data-sort="year">Rok</th>
+              <th data-sort="mileage">Przebieg</th>
+              <th data-sort="fuelType">Paliwo</th>
+              <th data-sort="location">Lokalizacja</th>
+              <th>Link</th>
+            </tr>
+          </thead>
+          <tbody id="listings-body"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <script src="/js/brands-models.js"></script>
+  <script src="/js/generations.js"></script>
+  <script src="/js/app.js"></script>
+</body>
+</html>

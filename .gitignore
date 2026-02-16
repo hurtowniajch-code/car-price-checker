@@ -1,0 +1,10 @@
+node_modules/
+dist/
+.env
+nul
+next-data-dump.json
+debug-*
+test-log.ts
+find-gen-path*.js
+verify-generations.ts
+*.png
