@@ -15,18 +15,33 @@ export async function scrapeOtomoto(params: SearchParams, maxPages: number = MAX
   let browser: Browser | null = null;
 
   try {
+    const proxyUrl = process.env.PROXY_URL; // e.g. http://user:pass@host:port
+    const launchArgs = [
+      '--no-sandbox',
+      '--disable-setuid-sandbox',
+      '--disable-dev-shm-usage',
+      '--disable-gpu',
+    ];
+    if (proxyUrl) {
+      launchArgs.push(`--proxy-server=${proxyUrl}`);
+      console.log(`[Scraper] Using proxy: ${proxyUrl.replace(/\/\/.*@/, '//*:*@')}`);
+    }
+
     browser = await puppeteer.launch({
       headless: true,
       executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || undefined,
-      args: [
-        '--no-sandbox',
-        '--disable-setuid-sandbox',
-        '--disable-dev-shm-usage',
-        '--disable-gpu',
-      ],
+      args: launchArgs,
     });
 
     const page = await browser.newPage();
+
+    // Authenticate with proxy if credentials provided
+    const proxyUser = process.env.PROXY_USER;
+    const proxyPass = process.env.PROXY_PASS;
+    if (proxyUser && proxyPass) {
+      await page.authenticate({ username: proxyUser, password: proxyPass });
+    }
+
     await page.setUserAgent(
       'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36'
     );
