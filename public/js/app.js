@@ -111,7 +111,7 @@ brandSelect.addEventListener('change', () => {
   updateGenerationDropdown(brandSelect.value, modelSelect.value);
 });
 
-// When model changes: auto-fill brand if needed, then update generation
+// When model changes: auto-fill brand if needed, then update generation + options
 modelSelect.addEventListener('change', () => {
   const selectedModel = modelSelect.value;
   if (!selectedModel) {
@@ -138,6 +138,14 @@ modelSelect.addEventListener('change', () => {
   }
 
   updateGenerationDropdown(brandSelect.value, selectedModel);
+  populateOptionsFromPreScraped(brandSelect.value, selectedModel, generationSelect.value);
+});
+
+// When generation changes: re-populate options with generation-specific data
+generationSelect.addEventListener('change', () => {
+  if (brandSelect.value && modelSelect.value) {
+    populateOptionsFromPreScraped(brandSelect.value, modelSelect.value, generationSelect.value);
+  }
 });
 
 // Initialize dropdowns on page load
@@ -145,7 +153,70 @@ initBrandDropdown();
 updateModelDropdown('');
 
 // ============================================================
-// Fetch options from Otomoto (fuel types, engine capacities)
+// Auto-populate options from pre-scraped data
+// ============================================================
+
+const transmissionSelect = document.getElementById('transmission');
+
+function populateOptionsFromPreScraped(brand, model, genSlug) {
+  if (typeof MODEL_OPTIONS === 'undefined') return;
+
+  const modelOpts = MODEL_OPTIONS[brand] && MODEL_OPTIONS[brand][model];
+  if (!modelOpts) {
+    // No pre-scraped data — show fetch button as fallback
+    fetchOptionsBtn.style.display = '';
+    return;
+  }
+
+  // Use generation-specific data if available, otherwise fall back to model-level
+  const opts = (genSlug && modelOpts.byGeneration && modelOpts.byGeneration[genSlug])
+    ? modelOpts.byGeneration[genSlug]
+    : modelOpts;
+
+  // Populate fuel type dropdown
+  const currentFuel = fuelTypeSelect.value;
+  fuelTypeSelect.innerHTML = '<option value="">-- dowolny --</option>';
+  (opts.fuelTypes || []).forEach((fuel) => {
+    const opt = document.createElement('option');
+    opt.value = fuel;
+    opt.textContent = fuel;
+    fuelTypeSelect.appendChild(opt);
+  });
+  if (currentFuel) fuelTypeSelect.value = currentFuel;
+
+  // Populate transmission dropdown from pre-scraped gearboxes
+  if (opts.gearboxes && opts.gearboxes.length > 0) {
+    const gearboxToValue = {
+      'Manualna': 'Manual',
+      'Automatyczna': 'Automatic',
+    };
+    const currentTrans = transmissionSelect.value;
+    transmissionSelect.innerHTML = '<option value="">-- dowolna --</option>';
+    opts.gearboxes.forEach((g) => {
+      const opt = document.createElement('option');
+      opt.value = gearboxToValue[g] || g;
+      opt.textContent = g;
+      transmissionSelect.appendChild(opt);
+    });
+    if (currentTrans) transmissionSelect.value = currentTrans;
+  }
+
+  // Store engine capacity data for fuel-type filtering
+  allEngineCapacities = opts.engineCapacities || [];
+  engineCapacitiesByFuel = opts.engineCapacitiesByFuel || {};
+  updateEngineCapacityDropdown();
+
+  // Store power data
+  allPowers = opts.powers || [];
+  powersByFuel = opts.powersByFuel || {};
+  updatePowerDropdown();
+
+  // Hide fetch button since we have pre-scraped data
+  fetchOptionsBtn.style.display = 'none';
+}
+
+// ============================================================
+// Fetch options from Otomoto (fallback when no pre-scraped data)
 // ============================================================
 
 fetchOptionsBtn.addEventListener('click', async () => {
@@ -373,7 +444,8 @@ function renderListings(listings) {
       '<td>' + (listing.year || '-') + '</td>' +
       '<td>' + (listing.mileage ? formatMileage(listing.mileage) : '-') + '</td>' +
       '<td>' + (listing.fuelType || '-') + '</td>' +
-      '<td>' + (listing.location || '-') + '</td>' +
+      '<td>' + (listing.engineCapacity ? new Intl.NumberFormat('pl-PL').format(listing.engineCapacity) + ' ccm' : '-') + '</td>' +
+      '<td>' + (listing.power ? listing.power + ' KM' : '-') + '</td>' +
       '<td>' + (listing.link ? '<a href="' + escapeHtml(listing.link) + '" target="_blank" rel="noopener">Zobacz</a>' : '-') + '</td>';
     tbody.appendChild(row);
   });
