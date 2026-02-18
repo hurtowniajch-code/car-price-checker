@@ -7,6 +7,7 @@
  * (no __NEXT_DATA__ in response).
  */
 
+import { ProxyAgent } from 'undici';
 import { SearchParams, ListingData } from '../types';
 import { buildOtomotoUrl } from './url-builder';
 import { scrapeOtomoto as puppeteerScrape } from './otomoto-scraper';
@@ -63,20 +64,8 @@ async function fetchPage(url: string): Promise<string | null> {
   };
 
   if (proxyUrlStr) {
-    try {
-      // undici is bundled with Node 18+ — use ProxyAgent for native fetch
-      // Use a variable name so TypeScript skips static module resolution
-      const _pkg = 'undici';
-      const undici = (global as any).__undici || (() => {
-        try { return require(_pkg); } catch { return null; }
-      })();
-      if (undici?.ProxyAgent) {
-        fetchOptions.dispatcher = new undici.ProxyAgent(proxyUrlStr);
-        console.log(`[FetchScraper] Using proxy`);
-      }
-    } catch {
-      console.log(`[FetchScraper] Proxy setup failed, continuing without proxy`);
-    }
+    fetchOptions.dispatcher = new ProxyAgent(proxyUrlStr);
+    console.log(`[FetchScraper] Using proxy`);
   }
 
   try {
@@ -185,13 +174,6 @@ export async function scrapeOtomotoFast(
   const searchUrl = buildOtomotoUrl(params, 1);
   const allListings: ListingData[] = [];
   const seenLinks = new Set<string>();
-
-  // If proxy is configured, native fetch can't use it reliably — go straight to Puppeteer
-  if (process.env.PROXY_URL) {
-    console.log(`[FetchScraper] Proxy configured — using Puppeteer directly`);
-    const fallback = await puppeteerScrape(params, maxPages);
-    return { ...fallback, method: 'puppeteer' };
-  }
 
   console.log(`[FetchScraper] Starting fast scrape`);
 
