@@ -1,5 +1,5 @@
 import { Router, Request, Response } from 'express';
-import { scrapeOtomoto } from '../scraper/otomoto-scraper';
+import { scrapeOtomotoFast } from '../scraper/otomoto-fetch-scraper';
 import { calculatePriceStats } from '../analysis/price-stats';
 import { SearchParams, EstimateResponse } from '../types';
 
@@ -75,7 +75,8 @@ router.post('/', async (req: Request, res: Response) => {
 
   try {
     console.log('[API] Starting scrape for:', searchParams);
-    const { listings: rawListings, searchUrl } = await scrapeOtomoto(searchParams);
+    const { listings: rawListings, searchUrl, method } = await scrapeOtomotoFast(searchParams);
+    console.log(`[API] Scrape method used: ${method}`);
 
     // Post-filter results by optional criteria
     let listings = rawListings;
