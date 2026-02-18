@@ -186,6 +186,13 @@ export async function scrapeOtomotoFast(
   const allListings: ListingData[] = [];
   const seenLinks = new Set<string>();
 
+  // If proxy is configured, native fetch can't use it reliably — go straight to Puppeteer
+  if (process.env.PROXY_URL) {
+    console.log(`[FetchScraper] Proxy configured — using Puppeteer directly`);
+    const fallback = await puppeteerScrape(params, maxPages);
+    return { ...fallback, method: 'puppeteer' };
+  }
+
   console.log(`[FetchScraper] Starting fast scrape`);
 
   for (let pageNum = 1; pageNum <= maxPages; pageNum++) {
