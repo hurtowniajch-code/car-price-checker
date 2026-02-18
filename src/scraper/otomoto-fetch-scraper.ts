@@ -45,11 +45,12 @@ function buildProxyUrl(): string | null {
   const proxyUser = process.env.PROXY_USER;
   const proxyPass = process.env.PROXY_PASS;
   if (!proxyUrl) return null;
+  // Strip any existing scheme — PROXY_URL may be "host:port" or "http://host:port"
+  const bare = proxyUrl.replace(/^https?:\/\//, '');
   if (proxyUser && proxyPass) {
-    const [host, port] = proxyUrl.split(':');
-    return `http://${proxyUser}:${proxyPass}@${host}:${port}`;
+    return `http://${proxyUser}:${proxyPass}@${bare}`;
   }
-  return `http://${proxyUrl}`;
+  return `http://${bare}`;
 }
 
 async function fetchPage(url: string): Promise<string | null> {
@@ -194,6 +195,11 @@ export async function scrapeOtomotoFast(
     const html = await fetchPage(url);
 
     if (!html) {
+      if (pageNum === 1) {
+        console.log(`[FetchScraper] No response on page 1 — falling back to Puppeteer`);
+        const fallback = await puppeteerScrape(params, maxPages);
+        return { ...fallback, method: 'puppeteer' };
+      }
       console.log(`[FetchScraper] No response on page ${pageNum}, stopping`);
       break;
     }
