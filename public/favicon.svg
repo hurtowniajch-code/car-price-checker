@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <!-- Orange rounded background -->
+  <rect width="32" height="32" rx="7" fill="#f97316"/>
+
+  <!-- "+" left -->
+  <rect fill="white" x="4" y="13" width="10" height="3" rx="1.5"/>
+  <rect fill="white" x="7.5" y="9.5" width="3" height="10" rx="1.5"/>
+
+  <!-- divider dot -->
+  <circle fill="white" cx="16" cy="22" r="1.2"/>
+
+  <!-- "−" right -->
+  <rect fill="white" x="18" y="13" width="10" height="3" rx="1.5"/>
+</svg>
