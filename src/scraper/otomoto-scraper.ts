@@ -56,16 +56,11 @@ export async function scrapeOtomoto(params: SearchParams, maxPages: number = MAX
       console.log(`[Scraper] Page ${pageNum}: ${url}`);
 
       try {
-        await page.goto(url, { waitUntil: 'networkidle2', timeout: 30000 });
+        await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 20000 });
+        await delay(1500);
       } catch {
-        console.log(`[Scraper] Navigation timeout on page ${pageNum}, trying with domcontentloaded`);
-        try {
-          await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 15000 });
-          await delay(3000);
-        } catch {
-          console.log(`[Scraper] Failed to load page ${pageNum}, stopping`);
-          break;
-        }
+        console.log(`[Scraper] Failed to load page ${pageNum}, stopping`);
+        break;
       }
 
       // Dismiss cookie consent if present (first page only)
