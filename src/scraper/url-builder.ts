@@ -27,8 +27,11 @@ export function buildOtomotoUrl(params: SearchParams, page: number = 1): string 
     if (params.generationYearTo && yearTo > params.generationYearTo) {
       yearTo = params.generationYearTo;
     }
-    query.set('search[filter_float_year:from]', String(yearFrom));
-    query.set('search[filter_float_year:to]', String(yearTo));
+    // Only apply year filter if the range is valid (generation filter already scopes it)
+    if (yearFrom <= yearTo) {
+      query.set('search[filter_float_year:from]', String(yearFrom));
+      query.set('search[filter_float_year:to]', String(yearTo));
+    }
   }
 
   // Mileage range: ±mileageRange km from input
