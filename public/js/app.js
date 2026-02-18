@@ -14,6 +14,8 @@ const errorEl = document.getElementById('error');
 const resultsEl = document.getElementById('results');
 const brandSelect = document.getElementById('brand');
 const modelSelect = document.getElementById('model');
+const brandAutocomplete = document.getElementById('brand-autocomplete');
+const modelAutocomplete = document.getElementById('model-autocomplete');
 const generationSelect = document.getElementById('generation');
 const fetchOptionsBtn = document.getElementById('fetch-options-btn');
 const fuelTypeSelect = document.getElementById('fuelType');
@@ -21,64 +23,136 @@ const engineCapacitySelect = document.getElementById('engineCapacity');
 const powerSelect = document.getElementById('power');
 
 // ============================================================
-// Brand & Model dropdown logic
+// Brand & Model autocomplete
 // ============================================================
 
-// Populate brand dropdown
-function initBrandDropdown() {
-  brandSelect.innerHTML = '<option value="">-- wybierz markę --</option>';
-  ALL_BRANDS.forEach((brand) => {
-    const opt = document.createElement('option');
-    opt.value = brand;
-    opt.textContent = brand;
-    brandSelect.appendChild(opt);
+function showAC(list) { list.classList.add('open'); }
+function hideAC(list) { list.classList.remove('open'); list.innerHTML = ''; }
+
+function buildBrandList(filter) {
+  brandAutocomplete.innerHTML = '';
+  const f = filter.toLowerCase();
+  const matches = f ? ALL_BRANDS.filter(b => b.toLowerCase().includes(f)) : ALL_BRANDS;
+
+  matches.forEach((brand) => {
+    const li = document.createElement('li');
+    li.textContent = brand;
+    li.addEventListener('mousedown', (e) => {
+      e.preventDefault();
+      brandSelect.value = brand;
+      hideAC(brandAutocomplete);
+      updateGenerationDropdown(brand, modelSelect.value);
+    });
+    brandAutocomplete.appendChild(li);
+  });
+
+  matches.length ? showAC(brandAutocomplete) : hideAC(brandAutocomplete);
+}
+
+function buildModelList(filter) {
+  modelAutocomplete.innerHTML = '';
+  const f = filter.toLowerCase();
+  const brand = brandSelect.value;
+  const hasBrand = brand && BRANDS_MODELS[brand];
+
+  let items;
+  if (hasBrand) {
+    items = BRANDS_MODELS[brand]
+      .filter(m => !f || m.toLowerCase().includes(f))
+      .map(m => ({ model: m, brand }));
+  } else {
+    const filtered = f ? ALL_MODELS.filter(({ model }) => model.toLowerCase().includes(f)) : ALL_MODELS;
+    items = filtered.slice(0, 150);
+  }
+
+  items.forEach(({ model, brand: b }) => {
+    const li = document.createElement('li');
+    if (!hasBrand) {
+      li.innerHTML = escapeHtml(model) + ' <span class="brand-hint">(' + escapeHtml(b) + ')</span>';
+    } else {
+      li.textContent = model;
+    }
+    li.addEventListener('mousedown', (e) => {
+      e.preventDefault();
+      modelSelect.value = model;
+      hideAC(modelAutocomplete);
+      if (!brandSelect.value || !BRANDS_MODELS[brandSelect.value]) {
+        brandSelect.value = b || '';
+      }
+      updateGenerationDropdown(brandSelect.value, model);
+      populateOptionsFromPreScraped(brandSelect.value, model, generationSelect.value);
+    });
+    modelAutocomplete.appendChild(li);
+  });
+
+  items.length ? showAC(modelAutocomplete) : hideAC(modelAutocomplete);
+}
+
+function setupKeyboardNav(input, list, onSelect) {
+  input.addEventListener('keydown', (e) => {
+    const items = list.querySelectorAll('li');
+    const active = list.querySelector('li.ac-active');
+    let idx = active ? [...items].indexOf(active) : -1;
+
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      active?.classList.remove('ac-active');
+      const next = items[Math.min(idx + 1, items.length - 1)];
+      next?.classList.add('ac-active');
+      next?.scrollIntoView({ block: 'nearest' });
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      active?.classList.remove('ac-active');
+      const prev = items[Math.max(idx - 1, 0)];
+      prev?.classList.add('ac-active');
+      prev?.scrollIntoView({ block: 'nearest' });
+    } else if (e.key === 'Enter' && active) {
+      e.preventDefault();
+      active.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
+    } else if (e.key === 'Escape') {
+      hideAC(list);
+    }
   });
 }
 
-// Populate model dropdown based on selected brand (or all models if no brand)
-function updateModelDropdown(selectedBrand) {
-  const currentModel = modelSelect.value;
-  modelSelect.innerHTML = '';
+// Brand events
+brandSelect.addEventListener('focus', () => buildBrandList(brandSelect.value));
+brandSelect.addEventListener('click', () => buildBrandList(brandSelect.value));
+brandSelect.addEventListener('input', () => {
+  buildBrandList(brandSelect.value);
+  updateGenerationDropdown(brandSelect.value, modelSelect.value);
+});
+brandSelect.addEventListener('blur', () => setTimeout(() => hideAC(brandAutocomplete), 150));
+setupKeyboardNav(brandSelect, brandAutocomplete);
 
-  if (selectedBrand && BRANDS_MODELS[selectedBrand]) {
-    // Brand selected: show only that brand's models
-    const placeholder = document.createElement('option');
-    placeholder.value = '';
-    placeholder.textContent = '-- wybierz model --';
-    modelSelect.appendChild(placeholder);
-
-    BRANDS_MODELS[selectedBrand].forEach((model) => {
-      const opt = document.createElement('option');
-      opt.value = model;
-      opt.textContent = model;
-      modelSelect.appendChild(opt);
-    });
-
-    // Keep previously selected model if it exists in this brand
-    if (currentModel && BRANDS_MODELS[selectedBrand].includes(currentModel)) {
-      modelSelect.value = currentModel;
+// Model events
+modelSelect.addEventListener('focus', () => buildModelList(modelSelect.value));
+modelSelect.addEventListener('click', () => buildModelList(modelSelect.value));
+modelSelect.addEventListener('input', () => {
+  buildModelList(modelSelect.value);
+  const m = modelSelect.value;
+  if (!m) { updateGenerationDropdown('', ''); return; }
+  if (!brandSelect.value || !BRANDS_MODELS[brandSelect.value]) {
+    const b = MODEL_TO_BRAND[m.toLowerCase()];
+    if (b && BRANDS_MODELS[b] && BRANDS_MODELS[b].includes(m)) {
+      brandSelect.value = b;
     }
-  } else {
-    // No brand selected: show all models grouped by brand
-    const placeholder = document.createElement('option');
-    placeholder.value = '';
-    placeholder.textContent = '-- wybierz model (lub najpierw markę) --';
-    modelSelect.appendChild(placeholder);
-
-    ALL_MODELS.forEach(({ brand, model }) => {
-      const opt = document.createElement('option');
-      opt.value = model;
-      opt.textContent = model + '  (' + brand + ')';
-      opt.dataset.brand = brand;
-      modelSelect.appendChild(opt);
-    });
   }
-}
+  updateGenerationDropdown(brandSelect.value, m);
+  populateOptionsFromPreScraped(brandSelect.value, m, generationSelect.value);
+});
+modelSelect.addEventListener('blur', () => setTimeout(() => hideAC(modelAutocomplete), 150));
+setupKeyboardNav(modelSelect, modelAutocomplete);
+
+// Close on outside click
+document.addEventListener('click', (e) => {
+  if (!brandSelect.closest('.autocomplete-wrapper').contains(e.target)) hideAC(brandAutocomplete);
+  if (!modelSelect.closest('.autocomplete-wrapper').contains(e.target)) hideAC(modelAutocomplete);
+});
 
 // Populate generation dropdown based on brand + model
 function updateGenerationDropdown(brand, model) {
   generationSelect.innerHTML = '';
-
   const gens = (GENERATIONS[brand] && GENERATIONS[brand][model]) || [];
 
   if (gens.length === 0) {
@@ -105,52 +179,12 @@ function updateGenerationDropdown(brand, model) {
   generationSelect.disabled = false;
 }
 
-// When brand changes: update model list and reset generation
-brandSelect.addEventListener('change', () => {
-  updateModelDropdown(brandSelect.value);
-  updateGenerationDropdown(brandSelect.value, modelSelect.value);
-});
-
-// When model changes: auto-fill brand if needed, then update generation + options
-modelSelect.addEventListener('change', () => {
-  const selectedModel = modelSelect.value;
-  if (!selectedModel) {
-    updateGenerationDropdown('', '');
-    return;
-  }
-
-  if (!brandSelect.value) {
-    // No brand selected - auto-detect from model
-    const selectedOption = modelSelect.options[modelSelect.selectedIndex];
-
-    if (selectedOption.dataset.brand) {
-      brandSelect.value = selectedOption.dataset.brand;
-      updateModelDropdown(brandSelect.value);
-      modelSelect.value = selectedModel;
-    } else {
-      const brand = MODEL_TO_BRAND[selectedModel.toLowerCase()];
-      if (brand) {
-        brandSelect.value = brand;
-        updateModelDropdown(brand);
-        modelSelect.value = selectedModel;
-      }
-    }
-  }
-
-  updateGenerationDropdown(brandSelect.value, selectedModel);
-  populateOptionsFromPreScraped(brandSelect.value, selectedModel, generationSelect.value);
-});
-
 // When generation changes: re-populate options with generation-specific data
 generationSelect.addEventListener('change', () => {
   if (brandSelect.value && modelSelect.value) {
     populateOptionsFromPreScraped(brandSelect.value, modelSelect.value, generationSelect.value);
   }
 });
-
-// Initialize dropdowns on page load
-initBrandDropdown();
-updateModelDropdown('');
 
 // ============================================================
 // Auto-populate options from pre-scraped data
@@ -211,8 +245,8 @@ function populateOptionsFromPreScraped(brand, model, genSlug) {
   powersByFuel = opts.powersByFuel || {};
   updatePowerDropdown();
 
-  // Hide fetch button since we have pre-scraped data
-  fetchOptionsBtn.style.display = 'none';
+  // Keep fetch button visible as fallback
+  fetchOptionsBtn.style.display = '';
 }
 
 // ============================================================

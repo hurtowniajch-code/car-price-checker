@@ -381,6 +381,53 @@ tbody a:hover {
   text-decoration: underline;
 }
 
+/* Autocomplete */
+.autocomplete-wrapper {
+  position: relative;
+}
+
+.autocomplete-list {
+  display: none;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: #fff;
+  border: 1px solid #ccc;
+  border-top: none;
+  border-radius: 0 0 4px 4px;
+  max-height: 220px;
+  overflow-y: auto;
+  z-index: 1000;
+  list-style: none;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.08);
+}
+
+.autocomplete-list.open {
+  display: block;
+}
+
+.autocomplete-list li {
+  padding: 7px 10px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  color: #333;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.autocomplete-list li:hover,
+.autocomplete-list li.ac-active {
+  background: #f0f6ff;
+  color: #1a6fc4;
+}
+
+.autocomplete-list .brand-hint {
+  color: #aaa;
+  font-size: 0.8rem;
+}
+
 /* Utility */
 .hidden {
   display: none !important;
