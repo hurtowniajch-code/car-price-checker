@@ -1,31 +1,28 @@
 import { Router, Request, Response } from 'express';
-import { scrapeOtomoto } from '../scraper/otomoto-scraper';
+import { scrapeOtomotoFast } from '../scraper/otomoto-fetch-scraper';
 import { SearchParams } from '../types';
 
 const router = Router();
 
 router.post('/', async (req: Request, res: Response) => {
-  const { brand, model, generation, year, yearRange, mileage, mileageRange, damaged } = req.body;
+  const { brand, model, generation } = req.body;
 
   if (!brand || !model) {
     res.status(400).json({ success: false, error: 'Wymagane: marka, model.' });
     return;
   }
 
+  // Only use brand/model/generation — ignore year and mileage so we get
+  // all available fuel types and engine capacities for the model.
   const searchParams: SearchParams = {
     brand: brand.trim(),
     model: model.trim(),
     generation: generation || undefined,
-    year: year ? parseInt(year, 10) : undefined,
-    yearRange: yearRange !== undefined && yearRange !== '' ? parseInt(yearRange, 10) : undefined,
-    mileage: mileage ? parseInt(mileage, 10) : undefined,
-    mileageRange: mileageRange !== undefined && mileageRange !== '' ? parseInt(mileageRange, 10) : undefined,
-    damaged: damaged || undefined,
   };
 
   try {
     console.log('[Options] Fetching options for:', searchParams);
-    const { listings } = await scrapeOtomoto(searchParams, 1);
+    const { listings } = await scrapeOtomotoFast(searchParams, 1);
 
     const fuelTypes = [...new Set(
       listings.map((l) => l.fuelType).filter(Boolean) as string[]
