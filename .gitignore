@@ -8,3 +8,4 @@ test-log.ts
 find-gen-path*.js
 verify-generations.ts
 *.png
+!public/favicon-*.png
