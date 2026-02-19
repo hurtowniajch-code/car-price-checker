@@ -54,10 +54,10 @@ export function buildOtomotoUrl(params: SearchParams, page: number = 1): string 
     query.set('search[filter_float_engine_capacity:to]', String(params.engineCapacity));
   }
 
-  // Power (±10 KM range)
+  // Power (±2 KM range)
   if (params.power) {
-    query.set('search[filter_float_engine_power:from]', String(params.power - 10));
-    query.set('search[filter_float_engine_power:to]', String(params.power + 10));
+    query.set('search[filter_float_engine_power:from]', String(params.power - 2));
+    query.set('search[filter_float_engine_power:to]', String(params.power + 2));
   }
 
   // Damaged filter: "undamaged" or "damaged"
