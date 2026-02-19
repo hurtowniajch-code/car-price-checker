@@ -380,6 +380,44 @@ fuelTypeSelect.addEventListener('change', () => {
 });
 
 // ============================================================
+// Reset
+// ============================================================
+
+document.getElementById('reset-btn').addEventListener('click', () => {
+  // Text inputs
+  brandSelect.value = '';
+  modelSelect.value = '';
+  document.getElementById('year').value = '';
+  document.getElementById('mileage').value = '';
+  document.getElementById('version').value = '';
+
+  // Generation
+  generationSelect.innerHTML = '<option value="">-- wybierz model --</option>';
+  generationSelect.disabled = true;
+
+  // Selects with defaults
+  document.getElementById('yearRange').value = '1';
+  document.getElementById('mileageRange').value = '25';
+  document.getElementById('transmission').value = '';
+  document.getElementById('damaged').value = 'undamaged';
+  document.getElementById('trimPercent').value = '5';
+
+  // Dropdowns populated from scrape
+  fuelTypeSelect.innerHTML = '<option value="">-- dowolny --</option>';
+  engineCapacitySelect.innerHTML = '<option value="">-- dowolna --</option>';
+  powerSelect.innerHTML = '<option value="">-- dowolna --</option>';
+  allEngineCapacities = [];
+  engineCapacitiesByFuel = {};
+  allPowers = [];
+  powersByFuel = {};
+
+  // Clear results
+  hideError();
+  hideResults();
+  currentListings = [];
+});
+
+// ============================================================
 // Form submit & search
 // ============================================================
 
