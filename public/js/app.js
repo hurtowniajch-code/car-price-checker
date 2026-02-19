@@ -360,7 +360,7 @@ function updatePowerDropdown() {
   powers.forEach((hp) => {
     const opt = document.createElement('option');
     opt.value = hp;
-    opt.textContent = hp + ' KM';
+    opt.textContent = hp + ' KM (' + Math.round(hp * 0.7355) + ' kW)';
     powerSelect.appendChild(opt);
   });
 
