@@ -141,7 +141,7 @@ function buildModelList(filter) {
       }
       updateGenerationDropdown(brandSelect.value, model);
       populateOptionsFromPreScraped(brandSelect.value, model, generationSelect.value);
-      autoFetchFromCache(brandSelect.value, model);
+      autoFetchFromCache(brandSelect.value, model, generationSelect.value);
     });
     modelAutocomplete.appendChild(li);
   });
@@ -244,15 +244,16 @@ function updateGenerationDropdown(brand, model) {
 generationSelect.addEventListener('change', () => {
   if (brandSelect.value && modelSelect.value) {
     populateOptionsFromPreScraped(brandSelect.value, modelSelect.value, generationSelect.value);
-    autoFetchFromCache(brandSelect.value, modelSelect.value);
+    autoFetchFromCache(brandSelect.value, modelSelect.value, generationSelect.value);
   }
 });
 
 // Auto-populate from server cache when model is selected (no button click needed)
-async function autoFetchFromCache(brand, model) {
+async function autoFetchFromCache(brand, model, generation) {
   if (!brand || !model) return;
   try {
-    const res = await fetch(`/api/options?brand=${encodeURIComponent(brand)}&model=${encodeURIComponent(model)}`);
+    const genParam = generation ? `&generation=${encodeURIComponent(generation)}` : '';
+    const res = await fetch(`/api/options?brand=${encodeURIComponent(brand)}&model=${encodeURIComponent(model)}${genParam}`);
     const data = await res.json();
     if (!data.success) return;
 

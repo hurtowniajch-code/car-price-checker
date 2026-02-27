@@ -16,10 +16,12 @@ function loadCache(): Record<string, any> {
   }
 }
 
-function saveToCache(brand: string, model: string, data: any) {
+function saveToCache(brand: string, model: string, generation: string | undefined, data: any) {
   try {
     const cache = loadCache();
-    const key = `${brand.toLowerCase()}|${model.toLowerCase()}`;
+    const key = generation
+      ? `${brand.toLowerCase()}|${model.toLowerCase()}|${generation}`
+      : `${brand.toLowerCase()}|${model.toLowerCase()}`;
     cache[key] = { ...data, cachedAt: new Date().toISOString() };
     fs.mkdirSync(path.dirname(CACHE_FILE), { recursive: true });
     fs.writeFileSync(CACHE_FILE, JSON.stringify(cache));
@@ -28,15 +30,17 @@ function saveToCache(brand: string, model: string, data: any) {
   }
 }
 
-// GET: return cached options for brand/model (auto-populated on model selection)
+// GET: return cached options for brand/model[/generation] (auto-populated on model/generation selection)
 router.get('/', (req: Request, res: Response) => {
-  const { brand, model } = req.query;
+  const { brand, model, generation } = req.query;
   if (!brand || !model) {
     res.json({ success: false });
     return;
   }
   const cache = loadCache();
-  const key = `${String(brand).toLowerCase()}|${String(model).toLowerCase()}`;
+  const key = generation
+    ? `${String(brand).toLowerCase()}|${String(model).toLowerCase()}|${String(generation)}`
+    : `${String(brand).toLowerCase()}|${String(model).toLowerCase()}`;
   const data = cache[key];
   if (!data) {
     res.json({ success: false });
@@ -122,7 +126,7 @@ router.post('/', async (req: Request, res: Response) => {
     };
 
     // Save to persistent cache for instant auto-population next time
-    saveToCache(searchParams.brand, searchParams.model, payload);
+    saveToCache(searchParams.brand, searchParams.model, searchParams.generation, payload);
 
     res.json({ success: true, ...payload });
   } catch (error: any) {
