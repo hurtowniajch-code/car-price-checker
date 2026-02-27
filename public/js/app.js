@@ -194,12 +194,6 @@ modelSelect.addEventListener('input', () => {
   buildModelList(modelSelect.value);
   const m = modelSelect.value;
   if (!m) { updateGenerationDropdown('', ''); return; }
-  if (m.length >= 3 && (!brandSelect.value || !BRANDS_MODELS[brandSelect.value])) {
-    const b = MODEL_TO_BRAND[m.toLowerCase()];
-    if (b && BRANDS_MODELS[b] && BRANDS_MODELS[b].includes(m)) {
-      brandSelect.value = b;
-    }
-  }
   updateGenerationDropdown(brandSelect.value, m);
   populateOptionsFromPreScraped(brandSelect.value, m, generationSelect.value);
 });
