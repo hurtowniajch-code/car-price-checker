@@ -20,8 +20,8 @@ function getCacheKey(params: SearchParams): string {
     mileageRange: params.mileageRange,
     version: params.version?.toLowerCase(),
     fuelType: params.fuelType?.toLowerCase(),
-    engineCapacity: params.engineCapacity,
-    power: params.power,
+    engineCapacities: params.engineCapacities,
+    powers: params.powers,
     transmission: params.transmission?.toLowerCase(),
     damaged: params.damaged,
     trimPercent: params.trimPercent,
@@ -30,6 +30,12 @@ function getCacheKey(params: SearchParams): string {
 
 router.post('/', async (req: Request, res: Response) => {
   const { brand, model, generation, generationYearFrom, generationYearTo, year, yearRange, mileage, mileageRange, version, fuelType, engineCapacity, power, transmission, damaged, trimPercent } = req.body;
+  const engineCapacities: number[] = Array.isArray(req.body.engineCapacities) && req.body.engineCapacities.length > 0
+    ? req.body.engineCapacities.map(Number)
+    : engineCapacity ? [parseInt(engineCapacity, 10)] : [];
+  const powers: number[] = Array.isArray(req.body.powers) && req.body.powers.length > 0
+    ? req.body.powers.map(Number)
+    : power ? [parseInt(power, 10)] : [];
 
   // Validate required fields
   if (!brand || !model) {
@@ -57,8 +63,8 @@ router.post('/', async (req: Request, res: Response) => {
     mileageRange: mileageRange !== undefined && mileageRange !== '' ? parseInt(mileageRange, 10) : undefined,
     version: version?.trim() || undefined,
     fuelType: fuelType || undefined,
-    engineCapacity: engineCapacity ? parseInt(engineCapacity, 10) : undefined,
-    power: power ? parseInt(power, 10) : undefined,
+    engineCapacities: engineCapacities.length > 0 ? engineCapacities : undefined,
+    powers: powers.length > 0 ? powers : undefined,
     transmission: transmission || undefined,
     damaged: damaged || undefined,
     trimPercent: trimPercent !== undefined && trimPercent !== '' ? parseInt(trimPercent, 10) : 5,
@@ -116,6 +122,14 @@ router.post('/', async (req: Request, res: Response) => {
         return matchTerms.some((term) => lt.includes(term));
       });
       console.log(`[API] After transmission filter: ${listings.length} listings remain`);
+    }
+
+    if (searchParams.engineCapacities && searchParams.engineCapacities.length > 0) {
+      listings = listings.filter(l => l.engineCapacity !== null && searchParams.engineCapacities!.includes(l.engineCapacity!));
+    }
+
+    if (searchParams.powers && searchParams.powers.length > 0) {
+      listings = listings.filter(l => l.power !== null && searchParams.powers!.some(p => Math.abs(l.power! - p) <= 2));
     }
 
     const stats = calculatePriceStats(listings, searchParams.trimPercent ?? 5);

@@ -48,16 +48,20 @@ export function buildOtomotoUrl(params: SearchParams, page: number = 1): string 
     query.set('search[filter_enum_generation]', params.generation);
   }
 
-  // Engine capacity (exact match)
-  if (params.engineCapacity) {
-    query.set('search[filter_float_engine_capacity:from]', String(params.engineCapacity));
-    query.set('search[filter_float_engine_capacity:to]', String(params.engineCapacity));
+  // Engine capacity — single or multiple values (use min/max range; post-filter handles exact matching)
+  const caps = params.engineCapacities?.length ? params.engineCapacities
+    : params.engineCapacity ? [params.engineCapacity] : null;
+  if (caps && caps.length > 0) {
+    query.set('search[filter_float_engine_capacity:from]', String(Math.min(...caps)));
+    query.set('search[filter_float_engine_capacity:to]', String(Math.max(...caps)));
   }
 
-  // Power (±2 KM range)
-  if (params.power) {
-    query.set('search[filter_float_engine_power:from]', String(params.power - 2));
-    query.set('search[filter_float_engine_power:to]', String(params.power + 2));
+  // Power — single or multiple values (±2 KM around min/max)
+  const pwrs = params.powers?.length ? params.powers
+    : params.power ? [params.power] : null;
+  if (pwrs && pwrs.length > 0) {
+    query.set('search[filter_float_engine_power:from]', String(Math.min(...pwrs) - 2));
+    query.set('search[filter_float_engine_power:to]', String(Math.max(...pwrs) + 2));
   }
 
   // Damaged filter: "undamaged" or "damaged"

@@ -11,7 +11,9 @@ export interface SearchParams {
   version?: string;
   fuelType?: string;
   engineCapacity?: number;
+  engineCapacities?: number[];
   power?: number;
+  powers?: number[];
   transmission?: string;
   damaged?: string;
   trimPercent?: number;

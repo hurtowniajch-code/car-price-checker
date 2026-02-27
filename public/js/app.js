@@ -19,8 +19,67 @@ const modelAutocomplete = document.getElementById('model-autocomplete');
 const generationSelect = document.getElementById('generation');
 const fetchOptionsBtn = document.getElementById('fetch-options-btn');
 const fuelTypeSelect = document.getElementById('fuelType');
-const engineCapacitySelect = document.getElementById('engineCapacity');
-const powerSelect = document.getElementById('power');
+
+// ============================================================
+// Multi-select helpers (for engineCapacity and power)
+// ============================================================
+
+function msPopulate(menuId, boxId, items, labelFn) {
+  const menu = document.getElementById(menuId);
+  const currentVals = msGetValues(menuId);
+  menu.innerHTML = '';
+  items.forEach(val => {
+    const label = document.createElement('label');
+    const cb = document.createElement('input');
+    cb.type = 'checkbox';
+    cb.value = val;
+    cb.checked = currentVals.includes(String(val));
+    cb.addEventListener('change', () => msUpdateBox(menuId, boxId, labelFn));
+    label.appendChild(cb);
+    label.appendChild(document.createTextNode(' ' + labelFn(val)));
+    menu.appendChild(label);
+  });
+  msUpdateBox(menuId, boxId, labelFn);
+}
+
+function msGetValues(menuId) {
+  const menu = document.getElementById(menuId);
+  return Array.from(menu.querySelectorAll('input[type=checkbox]:checked')).map(cb => cb.value);
+}
+
+function msUpdateBox(menuId, boxId, labelFn) {
+  const vals = msGetValues(menuId);
+  document.getElementById(boxId).textContent = vals.length === 0
+    ? '-- dowolna --'
+    : vals.map(v => labelFn(Number(v))).join(', ');
+}
+
+function msClear(menuId, boxId) {
+  const menu = document.getElementById(menuId);
+  if (menu) menu.querySelectorAll('input[type=checkbox]').forEach(cb => cb.checked = false);
+  const box = document.getElementById(boxId);
+  if (box) box.textContent = '-- dowolna --';
+}
+
+// Open/close on click
+document.querySelectorAll('.ms-box').forEach(box => {
+  box.addEventListener('click', e => {
+    const menu = box.nextElementSibling;
+    const isOpen = menu.style.display !== 'none';
+    document.querySelectorAll('.ms-menu').forEach(m => m.style.display = 'none');
+    document.querySelectorAll('.ms-box').forEach(b => b.classList.remove('ms-open'));
+    if (!isOpen) {
+      menu.style.display = 'block';
+      box.classList.add('ms-open');
+    }
+    e.stopPropagation();
+  });
+});
+
+document.addEventListener('click', () => {
+  document.querySelectorAll('.ms-menu').forEach(m => m.style.display = 'none');
+  document.querySelectorAll('.ms-box').forEach(b => b.classList.remove('ms-open'));
+});
 
 // ============================================================
 // Brand & Model autocomplete
@@ -325,48 +384,22 @@ fetchOptionsBtn.addEventListener('click', async () => {
 // ============================================================
 
 function updateEngineCapacityDropdown() {
-  const currentEngine = engineCapacitySelect.value;
   const selectedFuel = fuelTypeSelect.value;
-
-  // Pick the right list: filtered by fuel or all
   const capacities = selectedFuel && engineCapacitiesByFuel[selectedFuel]
     ? engineCapacitiesByFuel[selectedFuel]
     : allEngineCapacities;
-
-  engineCapacitySelect.innerHTML = '<option value="">-- dowolna --</option>';
-  capacities.forEach((cc) => {
-    const opt = document.createElement('option');
-    opt.value = cc;
-    opt.textContent = new Intl.NumberFormat('pl-PL').format(cc) + ' ccm';
-    engineCapacitySelect.appendChild(opt);
-  });
-
-  // Keep previous selection if it still exists in the filtered list
-  if (currentEngine && capacities.includes(Number(currentEngine))) {
-    engineCapacitySelect.value = currentEngine;
-  }
+  msPopulate('engineCapacity-menu', 'engineCapacity-box', capacities,
+    cc => new Intl.NumberFormat('pl-PL').format(cc) + ' ccm');
 }
 
 // Update power dropdown (optionally filtered by fuel type)
 function updatePowerDropdown() {
-  const currentPower = powerSelect.value;
   const selectedFuel = fuelTypeSelect.value;
-
   const powers = selectedFuel && powersByFuel[selectedFuel]
     ? powersByFuel[selectedFuel]
     : allPowers;
-
-  powerSelect.innerHTML = '<option value="">-- dowolna --</option>';
-  powers.forEach((hp) => {
-    const opt = document.createElement('option');
-    opt.value = hp;
-    opt.textContent = hp + ' KM (' + Math.round(hp * 0.7355) + ' kW)';
-    powerSelect.appendChild(opt);
-  });
-
-  if (currentPower && powers.includes(Number(currentPower))) {
-    powerSelect.value = currentPower;
-  }
+  msPopulate('power-menu', 'power-box', powers,
+    hp => hp + ' KM (' + Math.round(hp * 0.7355) + ' kW)');
 }
 
 // When fuel type changes, update engine capacities and powers
@@ -404,8 +437,8 @@ document.getElementById('reset-btn').addEventListener('click', () => {
 
   // Dropdowns populated from scrape
   fuelTypeSelect.innerHTML = '<option value="">-- dowolny --</option>';
-  engineCapacitySelect.innerHTML = '<option value="">-- dowolna --</option>';
-  powerSelect.innerHTML = '<option value="">-- dowolna --</option>';
+  msClear('engineCapacity-menu', 'engineCapacity-box');
+  msClear('power-menu', 'power-box');
   allEngineCapacities = [];
   engineCapacitiesByFuel = {};
   allPowers = [];
@@ -455,8 +488,8 @@ async function performSearch() {
     mileageRange: document.getElementById('mileageRange').value,
     version: document.getElementById('version').value.trim() || undefined,
     fuelType: document.getElementById('fuelType').value || undefined,
-    engineCapacity: document.getElementById('engineCapacity').value || undefined,
-    power: document.getElementById('power').value || undefined,
+    engineCapacities: msGetValues('engineCapacity-menu').map(Number),
+    powers: msGetValues('power-menu').map(Number),
     transmission: document.getElementById('transmission').value || undefined,
     damaged: document.getElementById('damaged').value || undefined,
     trimPercent: document.getElementById('trimPercent').value,
