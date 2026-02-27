@@ -76,7 +76,8 @@ document.querySelectorAll('.ms-box').forEach(box => {
   });
 });
 
-document.addEventListener('click', () => {
+document.addEventListener('click', (e) => {
+  if (e.target.closest('.multi-select')) return;
   document.querySelectorAll('.ms-menu').forEach(m => m.style.display = 'none');
   document.querySelectorAll('.ms-box').forEach(b => b.classList.remove('ms-open'));
 });
