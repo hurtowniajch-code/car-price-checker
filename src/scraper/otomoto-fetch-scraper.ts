@@ -136,7 +136,7 @@ function extractNextData(html: string): { listings: ListingData[]; totalCount: n
           : null;
 
         const powerParam = getParam('engine_power');
-        const power = powerParam ? parseInt(String(powerParam.value).replace(/[^\d]/g, ''), 10) || null : null;
+        const power = powerParam ? parseInt(String(powerParam.displayValue ?? powerParam.value).replace(/[\s\u00a0]/g, ''), 10) || null : null;
 
         const gearboxParam = getParam('gearbox');
         const transmission = gearboxParam?.displayValue || null;
