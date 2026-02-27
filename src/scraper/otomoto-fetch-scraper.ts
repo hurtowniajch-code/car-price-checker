@@ -131,7 +131,9 @@ function extractNextData(html: string): { listings: ListingData[]; totalCount: n
         const fuelType = fuelParam?.displayValue || null;
 
         const engineParam = getParam('engine_capacity');
-        const engineCapacity = engineParam ? parseInt(String(engineParam.value).replace(/[^\d]/g, ''), 10) || null : null;
+        const engineCapacity = engineParam
+          ? parseInt(String(engineParam.displayValue ?? engineParam.value).replace(/[^\d]/g, ''), 10) || null
+          : null;
 
         const powerParam = getParam('engine_power');
         const power = powerParam ? parseInt(String(powerParam.value).replace(/[^\d]/g, ''), 10) || null : null;
