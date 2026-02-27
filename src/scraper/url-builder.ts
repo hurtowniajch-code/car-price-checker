@@ -71,8 +71,8 @@ export function buildOtomotoUrl(params: SearchParams, page: number = 1): string 
     query.set('search[filter_enum_damaged]', '1');
   }
 
-  // Sort by price ascending
-  query.set('search[order]', 'filter_float_price:asc');
+  // Sort order (default: price ascending; options fetch uses created_at:desc for variety)
+  query.set('search[order]', params.sort ?? 'filter_float_price:asc');
   query.set('search[advanced_search_expanded]', 'true');
 
   if (page > 1) {

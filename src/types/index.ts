@@ -17,6 +17,7 @@ export interface SearchParams {
   transmission?: string;
   damaged?: string;
   trimPercent?: number;
+  sort?: string;
 }
 
 export interface ListingData {

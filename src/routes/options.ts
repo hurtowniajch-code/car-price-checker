@@ -64,6 +64,7 @@ router.post('/', async (req: Request, res: Response) => {
     brand: brand.trim(),
     model: model.trim(),
     generation: generation || undefined,
+    sort: 'created_at:desc',
   };
 
   try {
