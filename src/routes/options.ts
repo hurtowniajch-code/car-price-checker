@@ -22,7 +22,7 @@ router.post('/', async (req: Request, res: Response) => {
 
   try {
     console.log('[Options] Fetching options for:', searchParams);
-    const { listings } = await scrapeOtomotoFast(searchParams, 1);
+    const { listings } = await scrapeOtomotoFast(searchParams, 3);
 
     const fuelTypes = [...new Set(
       listings.map((l) => l.fuelType).filter(Boolean) as string[]
