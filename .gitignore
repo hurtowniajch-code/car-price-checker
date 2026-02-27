@@ -1,6 +1,7 @@
 node_modules/
 dist/
 .env
+data/
 nul
 next-data-dump.json
 debug-*

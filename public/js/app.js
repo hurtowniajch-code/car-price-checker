@@ -141,6 +141,7 @@ function buildModelList(filter) {
       }
       updateGenerationDropdown(brandSelect.value, model);
       populateOptionsFromPreScraped(brandSelect.value, model, generationSelect.value);
+      autoFetchFromCache(brandSelect.value, model);
     });
     modelAutocomplete.appendChild(li);
   });
@@ -243,8 +244,42 @@ function updateGenerationDropdown(brand, model) {
 generationSelect.addEventListener('change', () => {
   if (brandSelect.value && modelSelect.value) {
     populateOptionsFromPreScraped(brandSelect.value, modelSelect.value, generationSelect.value);
+    autoFetchFromCache(brandSelect.value, modelSelect.value);
   }
 });
+
+// Auto-populate from server cache when model is selected (no button click needed)
+async function autoFetchFromCache(brand, model) {
+  if (!brand || !model) return;
+  try {
+    const res = await fetch(`/api/options?brand=${encodeURIComponent(brand)}&model=${encodeURIComponent(model)}`);
+    const data = await res.json();
+    if (!data.success) return;
+
+    const currentFuel = fuelTypeSelect.value;
+    fuelTypeSelect.innerHTML = '<option value="">-- dowolny --</option>';
+    data.fuelTypes.forEach((fuel) => {
+      const opt = document.createElement('option');
+      opt.value = fuel;
+      opt.textContent = fuel;
+      fuelTypeSelect.appendChild(opt);
+    });
+    if (currentFuel) fuelTypeSelect.value = currentFuel;
+
+    allEngineCapacities = data.engineCapacities || [];
+    engineCapacitiesByFuel = data.engineCapacitiesByFuel || {};
+    updateEngineCapacityDropdown();
+
+    allPowers = data.powers || [];
+    powersByFuel = data.powersByFuel || {};
+    updatePowerDropdown();
+
+    const date = data.cachedAt ? data.cachedAt.slice(0, 10) : '';
+    fetchOptionsBtn.textContent = `Odśwież dane z Otomoto (${date})`;
+  } catch (e) {
+    // silent — user can still click the button manually
+  }
+}
 
 // ============================================================
 // Auto-populate options from pre-scraped data

@@ -1,9 +1,51 @@
 import { Router, Request, Response } from 'express';
 import { scrapeOtomotoFast } from '../scraper/otomoto-fetch-scraper';
 import { SearchParams } from '../types';
+import fs from 'fs';
+import path from 'path';
 
 const router = Router();
 
+const CACHE_FILE = path.join(process.cwd(), 'data', 'options-cache.json');
+
+function loadCache(): Record<string, any> {
+  try {
+    return JSON.parse(fs.readFileSync(CACHE_FILE, 'utf8'));
+  } catch {
+    return {};
+  }
+}
+
+function saveToCache(brand: string, model: string, data: any) {
+  try {
+    const cache = loadCache();
+    const key = `${brand.toLowerCase()}|${model.toLowerCase()}`;
+    cache[key] = { ...data, cachedAt: new Date().toISOString() };
+    fs.mkdirSync(path.dirname(CACHE_FILE), { recursive: true });
+    fs.writeFileSync(CACHE_FILE, JSON.stringify(cache));
+  } catch (e) {
+    console.error('[Options] Failed to save cache:', e);
+  }
+}
+
+// GET: return cached options for brand/model (auto-populated on model selection)
+router.get('/', (req: Request, res: Response) => {
+  const { brand, model } = req.query;
+  if (!brand || !model) {
+    res.json({ success: false });
+    return;
+  }
+  const cache = loadCache();
+  const key = `${String(brand).toLowerCase()}|${String(model).toLowerCase()}`;
+  const data = cache[key];
+  if (!data) {
+    res.json({ success: false });
+    return;
+  }
+  res.json({ success: true, ...data });
+});
+
+// POST: live scrape + save to cache
 router.post('/', async (req: Request, res: Response) => {
   const { brand, model, generation } = req.body;
 
@@ -70,15 +112,19 @@ router.post('/', async (req: Request, res: Response) => {
 
     console.log(`[Options] Found ${fuelTypes.length} fuel types, ${engineCapacities.length} engine capacities, ${powers.length} power values`);
 
-    res.json({
-      success: true,
+    const payload = {
       fuelTypes,
       engineCapacities,
       engineCapacitiesByFuel,
       powers,
       powersByFuel,
       listingsScanned: listings.length,
-    });
+    };
+
+    // Save to persistent cache for instant auto-population next time
+    saveToCache(searchParams.brand, searchParams.model, payload);
+
+    res.json({ success: true, ...payload });
   } catch (error: any) {
     console.error('[Options] Failed:', error);
     res.status(500).json({ success: false, error: error.message });
