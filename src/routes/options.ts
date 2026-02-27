@@ -115,6 +115,18 @@ router.post('/', async (req: Request, res: Response) => {
       powersByFuel[fuel].sort((a, b) => a - b);
     }
 
+    // Group powers by engine capacity
+    const powersByCapacity: Record<number, number[]> = {};
+    for (const listing of listings) {
+      if (!listing.engineCapacity || listing.engineCapacity <= 0 || !listing.power || listing.power <= 0) continue;
+      const cap = listing.engineCapacity;
+      if (!powersByCapacity[cap]) powersByCapacity[cap] = [];
+      if (!powersByCapacity[cap].includes(listing.power)) powersByCapacity[cap].push(listing.power);
+    }
+    for (const cap of Object.keys(powersByCapacity)) {
+      powersByCapacity[Number(cap)].sort((a, b) => a - b);
+    }
+
     console.log(`[Options] Found ${fuelTypes.length} fuel types, ${engineCapacities.length} engine capacities, ${powers.length} power values`);
 
     const payload = {
@@ -123,6 +135,7 @@ router.post('/', async (req: Request, res: Response) => {
       engineCapacitiesByFuel,
       powers,
       powersByFuel,
+      powersByCapacity,
       listingsScanned: listings.length,
     };
 

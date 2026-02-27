@@ -5,6 +5,7 @@ let allEngineCapacities = [];
 let engineCapacitiesByFuel = {};
 let allPowers = [];
 let powersByFuel = {};
+let powersByCapacity = {};
 
 // DOM elements
 const form = document.getElementById('search-form');
@@ -273,6 +274,7 @@ async function autoFetchFromCache(brand, model, generation) {
 
     allPowers = data.powers || [];
     powersByFuel = data.powersByFuel || {};
+    powersByCapacity = data.powersByCapacity || {};
     updatePowerDropdown();
 
     const date = data.cachedAt ? data.cachedAt.slice(0, 10) : '';
@@ -339,6 +341,7 @@ function populateOptionsFromPreScraped(brand, model, genSlug) {
   // Store power data
   allPowers = opts.powers || [];
   powersByFuel = opts.powersByFuel || {};
+  powersByCapacity = opts.powersByCapacity || {};
   updatePowerDropdown();
 
   // Keep fetch button visible as fallback
@@ -403,6 +406,7 @@ fetchOptionsBtn.addEventListener('click', async () => {
     // Store power data
     allPowers = data.powers || [];
     powersByFuel = data.powersByFuel || {};
+    powersByCapacity = data.powersByCapacity || {};
 
     // Populate power dropdown (filtered by current fuel type if selected)
     updatePowerDropdown();
@@ -429,15 +433,34 @@ function updateEngineCapacityDropdown() {
     cc => new Intl.NumberFormat('pl-PL').format(cc) + ' ccm');
 }
 
-// Update power dropdown (optionally filtered by fuel type)
+// Update power dropdown (filtered by fuel type and/or selected engine capacities)
 function updatePowerDropdown() {
   const selectedFuel = fuelTypeSelect.value;
-  const powers = selectedFuel && powersByFuel[selectedFuel]
+  let powers = selectedFuel && powersByFuel[selectedFuel]
     ? powersByFuel[selectedFuel]
     : allPowers;
+
+  const selectedCaps = msGetValues('engineCapacity-menu').map(Number);
+  if (selectedCaps.length > 0 && Object.keys(powersByCapacity).length > 0) {
+    const allowed = new Set();
+    selectedCaps.forEach(cap => {
+      Object.keys(powersByCapacity).forEach(k => {
+        if (Math.abs(Number(k) - cap) <= 2) {
+          powersByCapacity[Number(k)].forEach(p => allowed.add(p));
+        }
+      });
+    });
+    powers = powers.filter(p => allowed.has(p));
+  }
+
   msPopulate('power-menu', 'power-box', powers,
     hp => hp + ' KM (' + Math.round(hp * 0.7355) + ' kW)');
 }
+
+// When engine capacity selection changes, re-filter power dropdown
+document.getElementById('engineCapacity-menu').addEventListener('change', () => {
+  if (allPowers.length > 0) updatePowerDropdown();
+});
 
 // When fuel type changes, update engine capacities and powers
 fuelTypeSelect.addEventListener('change', () => {
