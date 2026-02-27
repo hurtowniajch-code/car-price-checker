@@ -275,7 +275,7 @@ async function autoFetchFromCache(brand, model) {
     updatePowerDropdown();
 
     const date = data.cachedAt ? data.cachedAt.slice(0, 10) : '';
-    fetchOptionsBtn.textContent = `Odśwież dane z Otomoto (${date})`;
+    fetchOptionsBtn.textContent = `Odśwież dane (ostatni update: ${date})`;
   } catch (e) {
     // silent — user can still click the button manually
   }
