@@ -48,12 +48,12 @@ export function buildOtomotoUrl(params: SearchParams, page: number = 1): string 
     query.set('search[filter_enum_generation]', params.generation);
   }
 
-  // Engine capacity — single or multiple values (±2 cc around min/max; post-filter handles exact matching)
+  // Engine capacity — single or multiple values (±5 cc around min/max; post-filter handles exact matching)
   const caps = params.engineCapacities?.length ? params.engineCapacities
     : params.engineCapacity ? [params.engineCapacity] : null;
   if (caps && caps.length > 0) {
-    query.set('search[filter_float_engine_capacity:from]', String(Math.max(0, Math.min(...caps) - 2)));
-    query.set('search[filter_float_engine_capacity:to]', String(Math.max(...caps) + 2));
+    query.set('search[filter_float_engine_capacity:from]', String(Math.max(0, Math.min(...caps) - 5)));
+    query.set('search[filter_float_engine_capacity:to]', String(Math.max(...caps) + 5));
   }
 
   // Power — single or multiple values (±2 KM around min/max)

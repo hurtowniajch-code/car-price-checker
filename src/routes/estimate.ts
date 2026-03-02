@@ -125,7 +125,7 @@ router.post('/', async (req: Request, res: Response) => {
     }
 
     if (searchParams.engineCapacities && searchParams.engineCapacities.length > 0) {
-      listings = listings.filter(l => l.engineCapacity !== null && searchParams.engineCapacities!.some(c => Math.abs(l.engineCapacity! - c) <= 2));
+      listings = listings.filter(l => l.engineCapacity !== null && searchParams.engineCapacities!.some(c => Math.abs(l.engineCapacity! - c) <= 5));
     }
 
     if (searchParams.powers && searchParams.powers.length > 0) {
