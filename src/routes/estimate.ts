@@ -81,7 +81,7 @@ router.post('/', async (req: Request, res: Response) => {
 
   try {
     console.log('[API] Starting scrape for:', searchParams);
-    const { listings: rawListings, searchUrl, method } = await scrapeOtomotoFast(searchParams);
+    const { listings: rawListings, searchUrl, method } = await scrapeOtomotoFast({ ...searchParams, sort: 'created_at:desc' });
     console.log(`[API] Scrape method used: ${method}`);
 
     // Post-filter results by optional criteria
