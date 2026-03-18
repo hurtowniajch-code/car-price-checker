@@ -8,9 +8,23 @@ function slugify(input: string): string {
     .replace(/[^a-z0-9\-]/g, '');
 }
 
+// Some models have Otomoto slugs that differ from slugify(modelName)
+const MODEL_SLUG_OVERRIDES: Record<string, Record<string, string>> = {
+  'mercedes-benz': {
+    'gla': 'gla-klasa',
+    'glb': 'glb-klasa',
+    'glc': 'glc-klasa',
+    'gle': 'gle-klasa',
+    'gls': 'gls-klasa',
+    'gl':  'gl-klasa',
+    'glk': 'glk-klasa',
+  },
+};
+
 export function buildOtomotoUrl(params: SearchParams, page: number = 1): string {
   const brandSlug = slugify(params.brand);
-  const modelSlug = slugify(params.model);
+  const rawModelSlug = slugify(params.model);
+  const modelSlug = MODEL_SLUG_OVERRIDES[brandSlug]?.[rawModelSlug] ?? rawModelSlug;
 
   const base = `https://www.otomoto.pl/osobowe/${brandSlug}/${modelSlug}`;
 
