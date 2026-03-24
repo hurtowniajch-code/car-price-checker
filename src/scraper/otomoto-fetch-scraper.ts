@@ -54,7 +54,7 @@ function buildProxyUrl(): string | null {
   return `http://${bare}`;
 }
 
-async function fetchPage(url: string): Promise<string | null> {
+async function fetchPage(url: string, retries = 3): Promise<string | null> {
   const proxyUrlStr = buildProxyUrl();
 
   // Build fetch options — proxy via undici if available
@@ -68,17 +68,21 @@ async function fetchPage(url: string): Promise<string | null> {
     console.log(`[FetchScraper] Using proxy`);
   }
 
-  try {
-    const response = await fetch(url, fetchOptions);
-    if (!response.ok) {
-      console.log(`[FetchScraper] HTTP ${response.status}`);
-      return null;
+  for (let attempt = 1; attempt <= retries; attempt++) {
+    try {
+      const response = await fetch(url, fetchOptions);
+      if (!response.ok) {
+        console.log(`[FetchScraper] HTTP ${response.status} (attempt ${attempt}/${retries})`);
+        if (attempt < retries) await new Promise(r => setTimeout(r, 1500 * attempt));
+        continue;
+      }
+      return await response.text();
+    } catch (err: any) {
+      console.log(`[FetchScraper] Fetch error: ${err.message} (attempt ${attempt}/${retries})`);
+      if (attempt < retries) await new Promise(r => setTimeout(r, 1500 * attempt));
     }
-    return await response.text();
-  } catch (err: any) {
-    console.log(`[FetchScraper] Fetch error: ${err.message}`);
-    return null;
   }
+  return null;
 }
 
 function extractNextData(html: string): { listings: ListingData[]; totalCount: number } | null {
