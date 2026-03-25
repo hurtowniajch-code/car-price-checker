@@ -137,7 +137,7 @@ const BRANDS_MODELS = {
   "Skoda": ["100", "105", "120", "130", "135", "Citigo", "Elroq", "Enyaq", "Fabia", "Favorit", "Felicia", "Forman", "Kamiq", "Karoq", "Kodiaq", "Octavia", "Praktik", "RAPID", "Roomster", "Scala", "Superb", "Yeti"],
   "Skywell": ["ET5"],
   "Skyworth": ["CE11", "K", "K-i"],
-  "Smart": ["#1", "#3", "#5", "Crossblade", "Forfour", "Fortwo", "Roadster", "Roomster"],
+  "Smart": ["#1", "#3", "#5", "Crossblade", "Forfour", "Fortwo", "Roadster"],
   "Stelato": ["S9", "S9T"],
   "Subaru": ["1800 Coupe", "Ascent", "B9 Tribeca", "Baja", "BRZ", "Crosstrek", "Forester", "G3X Justy", "Impreza", "Justy", "Legacy", "Leone", "Levorg", "Outback", "Solterra", "SVX", "Trezia", "Tribeca", "Vivio", "WRX", "XT", "XV"],
   "Suzuki": ["Across", "Alto", "Baleno", "Cappucino", "Carry", "Celerio", "Fronx", "Grand Vitara", "Ignis", "Jimny", "Kizashi", "Liana", "LJ", "Reno", "S-Cross", "Samurai", "SJ", "Splash", "Super-Carry", "Swace", "Swift", "SX4", "SX4 S-Cross", "Vitara", "Wagon R+", "X-90", "XL7"],
