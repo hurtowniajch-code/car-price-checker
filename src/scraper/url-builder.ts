@@ -65,6 +65,26 @@ export function buildOtomotoUrl(params: SearchParams, page: number = 1): string 
   // Engine capacity is NOT included in the URL — Otomoto returns anti-bot pages for capacity-filtered URLs.
   // The post-filter in estimate.ts handles engine capacity matching with ±5 cc tolerance.
 
+  // Fuel type filter — maps Polish display values to Otomoto enum values
+  if (params.fuelType) {
+    const fuelMap: Record<string, string> = {
+      'benzyna': 'petrol',
+      'diesel': 'diesel',
+      'hybryda': 'hybrid',
+      'elektryczny': 'electric',
+      'electric': 'electric',
+      'lpg': 'lpg',
+      'cng': 'cng',
+      'benzyna+lpg': 'lpg',
+      'hybryda plug-in': 'plug-in_hybrid',
+    };
+    const fuelKey = params.fuelType.toLowerCase();
+    const fuelEnum = fuelMap[fuelKey];
+    if (fuelEnum) {
+      query.set('search[filter_enum_fuel_type]', fuelEnum);
+    }
+  }
+
   // Power — single or multiple values (±2 KM around min/max)
   const pwrs = params.powers?.length ? params.powers
     : params.power ? [params.power] : null;
