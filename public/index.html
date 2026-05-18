@@ -48,6 +48,56 @@
   }
   </script>
 
+  <!-- FAQ Schema -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+      {
+        "@type": "Question",
+        "name": "Czy wycena samochodu na ileoto.pl jest darmowa?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Tak, kalkulator wyceny samochodu jest całkowicie darmowy i nie wymaga rejestracji. Możesz korzystać z niego bez ograniczeń."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Skąd pochodzą dane do wyceny samochodu?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Dane są pobierane na żywo z Otomoto – największego polskiego serwisu ogłoszeń motoryzacyjnych. Dzięki temu wycena odzwierciedla aktualne ceny rynkowe, a nie historyczne tabele wartości."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Jak dokładna jest wycena samochodu online?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Dokładność zależy od liczby podobnych ogłoszeń na rynku. Popularne modele (Golf, Astra, Focus) mają setki ofert, więc wycena jest bardzo precyzyjna. Rzadsze modele mogą dawać mniej reprezentatywne wyniki."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Czym różni się ileoto.pl od EuroTax?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "EuroTax to komercyjny serwis wyceny samochodów stosowany przez ubezpieczycieli i dealerów. ileoto.pl to darmowa alternatywa, która bazuje bezpośrednio na aktualnych cenach z rynku wtórnego – nie wymaga rejestracji i jest dostępna dla każdego."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Jak sprawdzić wartość samochodu przed zakupem?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Wpisz markę i model auta, podaj rok produkcji i orientacyjny przebieg. Opcjonalnie wybierz pojemność i moc silnika. Kalkulator pokaże minimalną, maksymalną, średnią i medianę ceny – porównaj ofertę sprzedającego z rynkową medianą."
+        }
+      }
+    ]
+  }
+  </script>
+
   <link rel="stylesheet" href="/css/styles.css">
 </head>
 <body>
@@ -252,28 +302,122 @@
       </div>
     </div>
 
+    <!-- Content section for SEO -->
+    <section class="content-section" id="jak-to-dziala">
+      <h2>Jak wycenić samochód online?</h2>
+      <p>
+        Wycena samochodu na <strong>ileoto.pl</strong> działa na podstawie aktualnych ogłoszeń z Otomoto –
+        największego polskiego portalu z samochodami używanymi. Narzędzie analizuje ceny podobnych
+        pojazdów i w kilkanaście sekund podaje zakres cenowy: minimum, maksimum, średnią i medianę.
+      </p>
+      <div class="how-steps">
+        <div class="how-step">
+          <span class="step-num">1</span>
+          <div>
+            <strong>Wybierz markę i model</strong>
+            <p>Wpisz markę (np. Volkswagen) i model (np. Golf). Możesz też wybrać konkretną generację.</p>
+          </div>
+        </div>
+        <div class="how-step">
+          <span class="step-num">2</span>
+          <div>
+            <strong>Podaj rok i przebieg</strong>
+            <p>Im dokładniejsze dane, tym precyzyjniejsza wycena. Możesz ustawić zakres lat i kilometrów.</p>
+          </div>
+        </div>
+        <div class="how-step">
+          <span class="step-num">3</span>
+          <div>
+            <strong>Opcjonalnie: doprecyzuj wersję</strong>
+            <p>Filtruj po rodzaju paliwa, pojemności silnika, mocy czy skrzyni biegów dla dokładniejszego wyniku.</p>
+          </div>
+        </div>
+        <div class="how-step">
+          <span class="step-num">4</span>
+          <div>
+            <strong>Sprawdź wyniki</strong>
+            <p>Kalkulator pokaże Ci aktualną wartość rynkową auta wraz z listą konkretnych ogłoszeń.</p>
+          </div>
+        </div>
+      </div>
+
+      <h2>Jak działa kalkulator ceny samochodu?</h2>
+      <p>
+        Nasz kalkulator wyceny samochodu pobiera na żywo ogłoszenia z Otomoto, filtruje je według
+        podanych kryteriów (marka, model, rok, przebieg, silnik), a następnie oblicza statystyki cenowe:
+        <strong>cenę minimalną</strong>, <strong>cenę maksymalną</strong>, <strong>średnią</strong>
+        i <strong>medianę</strong>. Mediana jest szczególnie przydatna – odporniejsza na
+        pojedyncze ogłoszenia z zawyżoną lub zaniżoną ceną.
+      </p>
+      <p>
+        Narzędzie uwzględnia opcjonalne odrzucenie skrajnych wyników (domyślnie 5% z każdej strony),
+        dzięki czemu statystyki są bardziej reprezentatywne dla realnego rynku.
+        Dane są pobierane w czasie rzeczywistym – <strong>wycena jest zawsze aktualna</strong>.
+      </p>
+
+      <h2>Czym różni się ileoto.pl od EuroTax?</h2>
+      <p>
+        EuroTax to komercyjny serwis wyceny samochodów, stosowany głównie przez ubezpieczycieli i dealerów.
+        <strong>ileoto.pl to darmowa alternatywa</strong>, która bazuje bezpośrednio na aktualnych cenach
+        transakcyjnych z rynku wtórnego – czyli na tym, za ile faktycznie sprzedają się podobne auta.
+        Nie wymaga rejestracji, nie ma ukrytych opłat i jest dostępna dla każdego.
+      </p>
+    </section>
+
+    <!-- FAQ section -->
+    <section class="faq-section" id="faq">
+      <h2>Najczęściej zadawane pytania</h2>
+
+      <div class="faq-item">
+        <h3>Czy wycena samochodu na ileoto.pl jest darmowa?</h3>
+        <p>Tak, kalkulator wyceny samochodu jest całkowicie darmowy i nie wymaga rejestracji. Możesz korzystać z niego bez ograniczeń.</p>
+      </div>
+
+      <div class="faq-item">
+        <h3>Skąd pochodzą dane do wyceny?</h3>
+        <p>Dane są pobierane na żywo z Otomoto – największego polskiego serwisu ogłoszeń motoryzacyjnych. Dzięki temu wycena odzwierciedla aktualne ceny rynkowe, a nie historyczne tabele wartości.</p>
+      </div>
+
+      <div class="faq-item">
+        <h3>Jak dokładna jest wycena samochodu online?</h3>
+        <p>Dokładność zależy od liczby podobnych ogłoszeń na rynku. Popularne modele (Golf, Astra, Focus) mają setki ofert, więc wycena jest bardzo precyzyjna. Rzadsze modele mogą dawać mniej reprezentatywne wyniki.</p>
+      </div>
+
+      <div class="faq-item">
+        <h3>Co oznaczają minimalna, maksymalna, średnia i mediana ceny?</h3>
+        <p>
+          <strong>Minimum</strong> – najtańsze ogłoszenie spełniające kryteria.<br>
+          <strong>Maksimum</strong> – najdroższe ogłoszenie.<br>
+          <strong>Średnia</strong> – suma cen podzielona przez liczbę ogłoszeń.<br>
+          <strong>Mediana</strong> – środkowa wartość; połowa aut jest tańsza, połowa droższa. To najlepsza miara realnej ceny rynkowej.
+        </p>
+      </div>
+
+      <div class="faq-item">
+        <h3>Jak sprawdzić wartość samochodu przed zakupem?</h3>
+        <p>Wpisz markę i model auta, które chcesz kupić, podaj rok produkcji i orientacyjny przebieg. Jeśli znasz wersję silnikową, wybierz też pojemność i moc. Kalkulator pokaże Ci, ile takie auto kosztuje na rynku – możesz porównać ofertę sprzedającego z rynkową medianą.</p>
+      </div>
+
+      <div class="faq-item">
+        <h3>Czy mogę wycenić auto przed sprzedażą?</h3>
+        <p>Tak – to jedno z głównych zastosowań kalkulatora. Wpisz swój samochód i sprawdź, ile podobne auta są sprzedawane. Pomoże Ci to ustalić rozsądną cenę wywoławczą i uniknąć sprzedaży poniżej wartości rynkowej.</p>
+      </div>
+
+      <div class="faq-item">
+        <h3>Jakie marki samochodów obsługuje kalkulator?</h3>
+        <p>Kalkulator obsługuje kilkadziesiąt marek – od najpopularniejszych (Volkswagen, Toyota, BMW, Mercedes, Audi, Opel, Ford, Skoda, Renault, Peugeot) po mniejsze (Alfa Romeo, Citroen, Dacia, Fiat, Honda, Hyundai, Kia, Mazda, Mitsubishi, Nissan, Seat, Suzuki i inne).</p>
+      </div>
+    </section>
+
     <footer class="site-footer">
       <div class="footer-content">
         <p class="footer-desc">
-          <strong>ileoto.pl</strong> – darmowa wycena samochodu online za darmo, bez rejestracji.
-          Nasz kalkulator ceny auta analizuje aktualne ogłoszenia z portali ogłoszeniowych i w kilka sekund podaje
+          <strong>ileoto.pl</strong> – darmowa wycena samochodu online, bez rejestracji.
+          Nasz kalkulator ceny auta analizuje aktualne ogłoszenia z Otomoto i w kilka sekund podaje
           minimalną, maksymalną, średnią i medianę ceny dla wybranego modelu.
           Szukasz alternatywy dla EuroTax? Wyceń swoje auto przed sprzedażą lub sprawdź
           wartość samochodu przed zakupem – szybko i bezpłatnie.
         </p>
-        <nav class="footer-tags" aria-label="Popularne wyszukiwania">
-          <span>Popularne:</span>
-          <a href="/?q=wycena-samochodu-online-za-darmo">Wycena samochodu online za darmo</a>
-          <a href="/?q=darmowa-wycena-samochodu-online">Darmowa wycena samochodu online</a>
-          <a href="/?q=wycena-auta-online">Wycena auta online</a>
-          <a href="/?q=wycena-samochodu-online-kalkulator">Wycena samochodu online kalkulator</a>
-          <a href="/?q=kalkulator-ceny-samochodu">Kalkulator ceny samochodu</a>
-          <a href="/?q=kalkulator-ceny-auta">Kalkulator ceny auta</a>
-          <a href="/?q=wartosc-samochodu-kalkulator">Wartość samochodu kalkulator</a>
-          <a href="/?q=ile-warte-moje-auto">Ile warte jest moje auto</a>
-          <a href="/?q=wycena-auta">Wycena auta</a>
-          <a href="/?q=cena-uzywany-samochod">Ceny samochodów używanych</a>
-        </nav>
         <p class="footer-copy">© 2026 ileoto.pl – dane pobierane na żywo</p>
       </div>
     </footer>
