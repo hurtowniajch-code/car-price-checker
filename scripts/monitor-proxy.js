@@ -3,8 +3,19 @@
  * Runs via cron, sends email alert if proxy is broken/out of traffic.
  */
 
+const fs = require('fs');
+const path = require('path');
 const { ProxyAgent } = require('undici');
 const nodemailer = require('nodemailer');
+
+// Load .env from project root (cron doesn't inherit PM2 env vars)
+const envFile = path.join(__dirname, '..', '.env');
+if (fs.existsSync(envFile)) {
+  for (const line of fs.readFileSync(envFile, 'utf8').split('\n')) {
+    const [key, ...rest] = line.split('=');
+    if (key && rest.length) process.env[key.trim()] = rest.join('=').trim();
+  }
+}
 
 const PROXY_URL   = process.env.PROXY_URL;
 const PROXY_USER  = process.env.PROXY_USER;
