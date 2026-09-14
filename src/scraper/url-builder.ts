@@ -30,13 +30,6 @@ export function buildOtomotoUrl(params: SearchParams, page: number = 1): string 
 
   const query = new URLSearchParams();
 
-  // Make + model MUST be explicit filter params. Otomoto no longer applies the model
-  // from the URL path alone — a path-only /osobowe/audi/a4 search returns every Audi
-  // model. The working search echoes filter_enum_make=audi & filter_enum_model=a4, so
-  // set them explicitly. (modelSlug already applies MODEL_SLUG_OVERRIDES.)
-  query.set('search[filter_enum_make]', brandSlug);
-  query.set('search[filter_enum_model]', modelSlug);
-
   // Year range: ±yearRange from the spec year, clamped to generation range if available
   if (params.year) {
     const range = params.yearRange ?? 1;

@@ -87,6 +87,16 @@ router.post('/', async (req: Request, res: Response) => {
     // Post-filter results by optional criteria
     let listings = rawListings;
 
+    // Model filter. Otomoto ignores the model in the URL path, and its model enum is
+    // body-specific (a4-avant / a4-limousine / a4-allroad, no umbrella "a4"), so a
+    // server-side model filter isn't reliable. Match the model token in the listing
+    // title instead: keeps all A4 bodies, excludes A6 / S4 / RS4 / Q5 / etc.
+    if (searchParams.model) {
+      const token = searchParams.model.trim().toLowerCase().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const modelRe = new RegExp(`(^|[^a-z0-9])${token}([^a-z0-9]|$)`, 'i');
+      listings = listings.filter((l) => modelRe.test(l.title));
+    }
+
     if (searchParams.version) {
       // Normalize: remove spaces, hyphens, dots → "s line" / "s-line" / "sline" all become "sline"
       const normalize = (s: string) => s.toLowerCase().replace(/[\s\-\.]/g, '');
