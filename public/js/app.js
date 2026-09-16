@@ -706,3 +706,56 @@ function showResults() {
 function hideResults() {
   resultsEl.classList.add('hidden');
 }
+
+// ============================================================
+// Refresh the model list of one brand from Otomoto
+// ============================================================
+
+const refreshBrandModelsBtn = document.getElementById('refreshBrandModelsBtn');
+const brandModelsInfo = document.getElementById('brandModelsInfo');
+
+refreshBrandModelsBtn.addEventListener('click', async () => {
+  const brand = brandSelect.value;
+  if (!brand) {
+    showError('Wybierz markę, aby odświeżyć listę modeli.');
+    return;
+  }
+  hideError();
+
+  const label = refreshBrandModelsBtn.textContent;
+  refreshBrandModelsBtn.disabled = true;
+  refreshBrandModelsBtn.textContent = 'Pobieram modele...';
+
+  try {
+    const response = await fetch('/api/catalog/refresh', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ category: 'osobowe', brand }),
+    });
+    const data = await response.json();
+
+    if (!data.success) {
+      showError(data.error || 'Nie udało się odświeżyć modeli.');
+      refreshBrandModelsBtn.textContent = label;
+      return;
+    }
+
+    const brandData = await (await fetch(`/api/catalog?category=osobowe&brand=${encodeURIComponent(brand)}`)).json();
+    if (brandData.success) {
+      BRANDS_MODELS[brand] = brandData.brand.models.map((m) => m.name).sort((a, b) => a.localeCompare(b, 'pl'));
+      buildModelList(modelSelect.value);
+    }
+
+    const date = (data.crawledAt || '').slice(0, 10);
+    refreshBrandModelsBtn.textContent = `Odśwież modele marki (${date})`;
+    const parts = [`${data.brand}: ${data.models} modeli`];
+    if (data.added.length) parts.push(`+${data.added.length} nowe`);
+    if (data.removed.length) parts.push(`-${data.removed.length}`);
+    brandModelsInfo.textContent = parts.join(', ');
+  } catch (err) {
+    showError('Nie udało się odświeżyć modeli: ' + err.message);
+    refreshBrandModelsBtn.textContent = label;
+  } finally {
+    refreshBrandModelsBtn.disabled = false;
+  }
+});
