@@ -63,4 +63,11 @@ describe('saveCatalog', () => {
     saveCatalog(dir, emptyCatalog());
     expect(fs.readdirSync(dir).filter((f) => f.endsWith('.tmp'))).toEqual([]);
   });
+  it('leaves no temp file behind when the save fails', () => {
+    saveCatalog(dir, emptyCatalog()); // so a .bak copy is also attempted
+    const circular: any = emptyCatalog();
+    circular.self = circular;
+    expect(() => saveCatalog(dir, circular)).toThrow();
+    expect(fs.readdirSync(dir).filter((f) => f.includes('.tmp'))).toEqual([]);
+  });
 });

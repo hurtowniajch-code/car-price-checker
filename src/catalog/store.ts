@@ -35,16 +35,41 @@ export function loadCatalog(dir: string = DEFAULT_DIR): Catalog | null {
   }
 }
 
-/** Write atomically: temp file → rename, keeping the previous catalog as .bak. */
+/**
+ * Write atomically: temp file → rename, keeping the previous catalog as .bak.
+ *
+ * CONCURRENCY NOTE: this is a read-modify-write with no locking. Two writers
+ * (the crawl script and the per-brand refresh API) both load the whole
+ * catalog, edit it, and write it back — if they run at the same time, the
+ * second write clobbers the first writer's changes. The crawl and a refresh
+ * must therefore never be run concurrently; the last writer wins and there is
+ * no merge. This is a deliberate limitation, not an oversight — do not add
+ * file locking to "fix" it without discussing the tradeoff first.
+ */
 export function saveCatalog(dir: string = DEFAULT_DIR, catalog: Catalog): void {
   const file = catalogPath(dir);
   fs.mkdirSync(dir, { recursive: true });
 
   if (fs.existsSync(file)) {
-    fs.copyFileSync(file, `${file}.bak`);
+    // Copy the previous catalog to .bak atomically too: copy-then-rename
+    // instead of copying straight onto `${file}.bak`, so a crash or error
+    // mid-copy can never leave a half-written .bak in place of a good one.
+    const bakTmp = `${file}.bak.tmp`;
+    try {
+      fs.copyFileSync(file, bakTmp);
+      fs.renameSync(bakTmp, `${file}.bak`);
+    } catch (err) {
+      fs.rmSync(bakTmp, { force: true });
+      throw err;
+    }
   }
 
   const tmp = `${file}.${process.pid}.tmp`;
-  fs.writeFileSync(tmp, JSON.stringify(catalog), 'utf8');
-  fs.renameSync(tmp, file);
+  try {
+    fs.writeFileSync(tmp, JSON.stringify(catalog), 'utf8');
+    fs.renameSync(tmp, file);
+  } catch (err) {
+    fs.rmSync(tmp, { force: true });
+    throw err;
+  }
 }
