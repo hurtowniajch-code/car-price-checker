@@ -2,8 +2,14 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { Catalog } from './types';
 
-/** Where the catalog lives in production. */
-export const DEFAULT_DIR = path.join(process.cwd(), 'data');
+/**
+ * Where the catalog lives: `<app>/data`, resolved from this module's own location,
+ * NOT from process.cwd(). pm2 runs the server with cwd=/root on the ileoto box, so a
+ * cwd-relative path made the server look for /root/data while the crawl wrote
+ * /opt/car-price-checker/data. Works from both `src/catalog` (ts-node) and
+ * `dist/catalog` (compiled).
+ */
+export const DEFAULT_DIR = path.resolve(__dirname, '..', '..', 'data');
 
 export function catalogPath(dir: string = DEFAULT_DIR): string {
   return path.join(dir, 'catalog.json');

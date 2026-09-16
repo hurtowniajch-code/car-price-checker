@@ -2,13 +2,30 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
-import { loadCatalog, saveCatalog, catalogPath } from './store';
+import { loadCatalog, saveCatalog, catalogPath, DEFAULT_DIR } from './store';
 import { emptyCatalog } from './types';
 
 let dir: string;
 
 beforeEach(() => { dir = fs.mkdtempSync(path.join(os.tmpdir(), 'catalog-')); });
 afterEach(() => { fs.rmSync(dir, { recursive: true, force: true }); });
+
+describe('DEFAULT_DIR', () => {
+  it('is the app\'s own data directory, not one relative to the working directory', () => {
+    // pm2 runs the server with cwd=/root, so a cwd-relative default pointed at the
+    // wrong place while the crawl wrote the app directory.
+    expect(DEFAULT_DIR).toBe(path.resolve(__dirname, '..', '..', 'data'));
+    const cwdRelative = path.join(process.cwd(), 'data');
+    const previous = process.cwd();
+    try {
+      process.chdir(os.tmpdir());
+      expect(DEFAULT_DIR).not.toBe(path.join(process.cwd(), 'data'));
+    } finally {
+      process.chdir(previous);
+    }
+    expect(DEFAULT_DIR).toBe(cwdRelative); // vitest runs from the repo root, so they agree here
+  });
+});
 
 describe('loadCatalog', () => {
   it('returns null when there is no catalog yet', () => {
