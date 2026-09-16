@@ -89,4 +89,24 @@ describe('validateCategory', () => {
     const now = healthy(180); // -10%
     expect(validateCategory('osobowe', now, previous).map((p) => p.check)).toContain('shrink');
   });
+
+  it('reports a brand that disappears entirely, even when the category-wide loss is small', () => {
+    const previous = healthy(200);
+    const now = healthy(200);
+    const removed = now.brands[0].slug;
+    now.brands = now.brands.slice(1); // 200 -> 199 brands = 0.5% loss, under the 5% threshold
+    const problems = validateCategory('osobowe', now, previous);
+    expect(problems).toContainEqual(
+      expect.objectContaining({ check: 'shrink', brand: removed }),
+    );
+    expect(problems.map((p) => p.check)).not.toContain('minimum_size');
+  });
+
+  it('does not flag a brand that is genuinely new (absent from previous)', () => {
+    const previous = healthy(200);
+    previous.brands = previous.brands.slice(1); // previous is missing b0
+    const now = healthy(200); // now has b0
+    const problems = validateCategory('osobowe', now, previous);
+    expect(problems).toEqual([]);
+  });
 });

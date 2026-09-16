@@ -79,6 +79,17 @@ export function validateCategory(
         });
       }
     }
+
+    const now = new Set(category.brands.map((b) => b.slug));
+    for (const brand of previous.brands) {
+      if (brand.models.length > 0 && !now.has(brand.slug)) {
+        problems.push({
+          check: 'shrink',
+          brand: brand.slug,
+          message: `${brand.slug}: brand disappeared (had ${brand.models.length} models)`,
+        });
+      }
+    }
   }
 
   return problems;
