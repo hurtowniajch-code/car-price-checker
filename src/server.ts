@@ -2,12 +2,17 @@ import express from 'express';
 import path from 'path';
 import estimateRouter from './routes/estimate';
 import optionsRouter from './routes/options';
+import { createCatalogRouter } from './routes/catalog';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// Catalog routes first: /js/brands-models.js and /js/generations.js are generated from
+// data/catalog.json, and fall through to the static files when there is no catalog.
+app.use(createCatalogRouter().router);
 
 // Serve static frontend
 app.use(express.static(path.join(__dirname, '..', 'public')));
