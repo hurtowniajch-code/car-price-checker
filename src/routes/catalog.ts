@@ -83,6 +83,14 @@ export function createCatalogRouter(options: Options = {}) {
         res.status(429).json({ success: false, error: `Odświeżono niedawno — spróbuj za ${wait} min.` });
         return;
       }
+      // Start the cooldown now, before the proxied Otomoto fetch, not after a
+      // successful save: every attempt past this point costs a real proxy
+      // request, so it must count against the limit whether it goes on to
+      // succeed, 503, 404, 409 or fail to save. Trade-off: a transient failure
+      // (e.g. Otomoto hiccup, disk full) also blocks a legitimate retry of the
+      // same brand for the full cooldown — acceptable for a public,
+      // unauthenticated endpoint whose whole purpose is limiting proxy spend.
+      lastRefresh.set(key, Date.now());
 
       let brand;
       try {
@@ -115,7 +123,6 @@ export function createCatalogRouter(options: Options = {}) {
         return;
       }
 
-      lastRefresh.set(key, Date.now());
       res.json({
         success: true,
         brand: brand.name,
