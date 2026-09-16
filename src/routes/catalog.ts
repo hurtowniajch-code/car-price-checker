@@ -23,92 +23,113 @@ export function createCatalogRouter(options: Options = {}) {
   const lastRefresh = new Map<string, number>();
 
   async function getCatalog(req: Request, res: Response) {
-    const catalog = loadCatalog(dir);
-    if (!catalog) {
-      res.status(404).json({ success: false, error: 'Katalog nie został jeszcze pobrany.' });
-      return;
+    try {
+      const catalog = loadCatalog(dir);
+      if (!catalog) {
+        res.status(404).json({ success: false, error: 'Katalog nie został jeszcze pobrany.' });
+        return;
+      }
+      const category = String(req.query.category ?? 'osobowe');
+      const brandName = req.query.brand ? String(req.query.brand) : null;
+      if (!brandName) {
+        res.json({ success: true, catalog });
+        return;
+      }
+      if (!isCategoryId(category)) {
+        res.status(400).json({ success: false, error: `Nieznana kategoria: ${category}` });
+        return;
+      }
+      const brand = catalog.categories[category].brands.find(
+        (b) => b.name.toLowerCase() === brandName.toLowerCase() || b.slug === brandName.toLowerCase(),
+      );
+      if (!brand) {
+        res.status(404).json({ success: false, error: `Nieznana marka: ${brandName}` });
+        return;
+      }
+      res.json({ success: true, brand });
+    } catch (err) {
+      console.error('[catalog] getCatalog failed unexpectedly:', err);
+      if (!res.headersSent) {
+        res.status(500).json({ success: false, error: 'Wystąpił nieoczekiwany błąd.' });
+      }
     }
-    const category = String(req.query.category ?? 'osobowe');
-    const brandName = req.query.brand ? String(req.query.brand) : null;
-    if (!brandName) {
-      res.json({ success: true, catalog });
-      return;
-    }
-    if (!isCategoryId(category)) {
-      res.status(400).json({ success: false, error: `Nieznana kategoria: ${category}` });
-      return;
-    }
-    const brand = catalog.categories[category].brands.find(
-      (b) => b.name.toLowerCase() === brandName.toLowerCase() || b.slug === brandName.toLowerCase(),
-    );
-    if (!brand) {
-      res.status(404).json({ success: false, error: `Nieznana marka: ${brandName}` });
-      return;
-    }
-    res.json({ success: true, brand });
   }
 
   async function refresh(req: Request, res: Response) {
-    const category = String(req.body.category ?? 'osobowe');
-    const brandName = String(req.body.brand ?? '').trim();
-
-    if (!isCategoryId(category)) {
-      res.status(400).json({ success: false, error: `Nieznana kategoria: ${category}` });
-      return;
-    }
-    if (!brandName) {
-      res.status(400).json({ success: false, error: 'Podaj markę.' });
-      return;
-    }
-
-    const catalog = loadCatalog(dir) ?? emptyCatalog();
-    const categoryId = category as CategoryId;
-    const known = catalog.categories[categoryId].brands.find(
-      (b) => b.name.toLowerCase() === brandName.toLowerCase() || b.slug === brandName.toLowerCase(),
-    );
-    const brandSlug = known?.slug ?? brandName.toLowerCase().replace(/\s+/g, '-');
-
-    const key = `${categoryId}|${brandSlug}`;
-    const last = lastRefresh.get(key);
-    if (last && Date.now() - last < REFRESH_COOLDOWN_MS) {
-      const wait = Math.ceil((REFRESH_COOLDOWN_MS - (Date.now() - last)) / 60000);
-      res.status(429).json({ success: false, error: `Odświeżono niedawno — spróbuj za ${wait} min.` });
-      return;
-    }
-
-    let brand;
     try {
-      const html = await fetchPage(brandUrl(categoryId, brandSlug));
-      const fresh = extractCategory(html, now());
-      brand = fresh.brands.find((b) => b.slug === brandSlug);
+      const category = String(req.body.category ?? 'osobowe');
+      const brandName = String(req.body.brand ?? '').trim();
+
+      if (!isCategoryId(category)) {
+        res.status(400).json({ success: false, error: `Nieznana kategoria: ${category}` });
+        return;
+      }
+      if (!brandName) {
+        res.status(400).json({ success: false, error: 'Podaj markę.' });
+        return;
+      }
+
+      const catalog = loadCatalog(dir) ?? emptyCatalog();
+      const categoryId = category as CategoryId;
+      const known = catalog.categories[categoryId].brands.find(
+        (b) => b.name.toLowerCase() === brandName.toLowerCase() || b.slug === brandName.toLowerCase(),
+      );
+      const brandSlug = known?.slug ?? brandName.toLowerCase().replace(/\s+/g, '-');
+
+      const key = `${categoryId}|${brandSlug}`;
+      const last = lastRefresh.get(key);
+      if (last && Date.now() - last < REFRESH_COOLDOWN_MS) {
+        const wait = Math.ceil((REFRESH_COOLDOWN_MS - (Date.now() - last)) / 60000);
+        res.status(429).json({ success: false, error: `Odświeżono niedawno — spróbuj za ${wait} min.` });
+        return;
+      }
+
+      let brand;
+      try {
+        const html = await fetchPage(brandUrl(categoryId, brandSlug));
+        const fresh = extractCategory(html, now());
+        brand = fresh.brands.find((b) => b.slug === brandSlug);
+      } catch (err) {
+        res.status(503).json({ success: false, error: `Otomoto nie odpowiada: ${(err as Error).message}` });
+        return;
+      }
+
+      if (!brand) {
+        res.status(404).json({ success: false, error: `Nieznana marka: ${brandName}` });
+        return;
+      }
+
+      const merged = mergeBrand(catalog, categoryId, brand);
+      const problems = validateCategory(categoryId, merged.catalog.categories[categoryId], catalog.categories[categoryId])
+        .filter((p) => p.brand === brandSlug);
+      if (problems.length > 0) {
+        res.status(409).json({ success: false, error: `Dane z Otomoto wyglądają niekompletnie: ${problems[0].message}` });
+        return;
+      }
+
+      try {
+        saveCatalog(dir, merged.catalog);
+      } catch (err) {
+        console.error(`[catalog] failed to save catalog after refreshing ${key}:`, err);
+        res.status(500).json({ success: false, error: 'Nie udało się zapisać katalogu.' });
+        return;
+      }
+
+      lastRefresh.set(key, Date.now());
+      res.json({
+        success: true,
+        brand: brand.name,
+        models: brand.models.length,
+        added: merged.added,
+        removed: merged.removed,
+        crawledAt: brand.crawledAt,
+      });
     } catch (err) {
-      res.status(503).json({ success: false, error: `Otomoto nie odpowiada: ${(err as Error).message}` });
-      return;
+      console.error('[catalog] refresh handler failed unexpectedly:', err);
+      if (!res.headersSent) {
+        res.status(500).json({ success: false, error: 'Wystąpił nieoczekiwany błąd.' });
+      }
     }
-
-    if (!brand) {
-      res.status(404).json({ success: false, error: `Nieznana marka: ${brandName}` });
-      return;
-    }
-
-    const merged = mergeBrand(catalog, categoryId, brand);
-    const problems = validateCategory(categoryId, merged.catalog.categories[categoryId], catalog.categories[categoryId])
-      .filter((p) => p.brand === brandSlug);
-    if (problems.length > 0) {
-      res.status(409).json({ success: false, error: `Dane z Otomoto wyglądają niekompletnie: ${problems[0].message}` });
-      return;
-    }
-
-    saveCatalog(dir, merged.catalog);
-    lastRefresh.set(key, Date.now());
-    res.json({
-      success: true,
-      brand: brand.name,
-      models: brand.models.length,
-      added: merged.added,
-      removed: merged.removed,
-      crawledAt: brand.crawledAt,
-    });
   }
 
   function sendJs(res: Response, next: NextFunction, body: string | null) {
@@ -121,13 +142,23 @@ export function createCatalogRouter(options: Options = {}) {
   }
 
   async function brandsModelsJsHandler(_req: Request, res: Response, next: NextFunction) {
-    const catalog = loadCatalog(dir);
-    sendJs(res, next, catalog ? brandsModelsJs(catalog) : null);
+    try {
+      const catalog = loadCatalog(dir);
+      sendJs(res, next, catalog ? brandsModelsJs(catalog) : null);
+    } catch (err) {
+      console.error('[catalog] brandsModelsJs failed unexpectedly:', err);
+      next();
+    }
   }
 
   async function generationsJsHandler(_req: Request, res: Response, next: NextFunction) {
-    const catalog = loadCatalog(dir);
-    sendJs(res, next, catalog ? generationsJs(catalog) : null);
+    try {
+      const catalog = loadCatalog(dir);
+      sendJs(res, next, catalog ? generationsJs(catalog) : null);
+    } catch (err) {
+      console.error('[catalog] generationsJs failed unexpectedly:', err);
+      next();
+    }
   }
 
   const router = Router();

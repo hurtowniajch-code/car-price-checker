@@ -101,6 +101,37 @@ describe('POST /api/catalog/refresh', () => {
     const res = await call(router.handlers.refresh, { body: { category: 'ciezarowe', brand: 'Volkswagen' } });
     expect(res.statusCode).toBe(400);
   });
+
+  it('500s (without throwing) when saving the refreshed catalog fails', async () => {
+    // Parent of `dir` is a plain file, so fs.mkdirSync inside saveCatalog throws ENOTDIR.
+    const blocker = fs.mkdtempSync(path.join(os.tmpdir(), 'catalog-blocker-'));
+    const blockerFile = path.join(blocker, 'blocker');
+    fs.writeFileSync(blockerFile, 'x');
+    const badDir = path.join(blockerFile, 'sub');
+    const router = createCatalogRouter({ dir: badDir, fetchPage: async () => brandPage, now: () => AT });
+
+    const res = await call(router.handlers.refresh, { body: { category: 'osobowe', brand: 'Volkswagen' } });
+
+    expect(res.statusCode).toBe(500);
+    expect(res.body).toMatchObject({ success: false, error: 'Nie udało się zapisać katalogu.' });
+    fs.rmSync(blocker, { recursive: true, force: true });
+  });
+
+  it('rate-limits a failed refresh too, so a retry cannot skip the cooldown', async () => {
+    let fetchCalls = 0;
+    const router = createCatalogRouter({
+      dir,
+      fetchPage: async () => { fetchCalls++; throw new Error('HTTP 403'); },
+      now: () => AT,
+    });
+
+    const first = await call(router.handlers.refresh, { body: { category: 'osobowe', brand: 'Volkswagen' } });
+    expect(first.statusCode).toBe(503);
+
+    const second = await call(router.handlers.refresh, { body: { category: 'osobowe', brand: 'Volkswagen' } });
+    expect(second.statusCode).toBe(429);
+    expect(fetchCalls).toBe(1);
+  });
 });
 
 describe('generated js files', () => {
