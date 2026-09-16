@@ -2,7 +2,14 @@ const { Client } = require('ssh2');
 
 const HOST = '209.38.221.144';
 const USER = 'root';
-const PASS = 'HasloDo1!Ocean';
+// Set SSH_PASS in the environment (e.g. `SSH_PASS=... node scripts/deploy.js`).
+// The password used to be hard-coded here and is still in this repo's git history,
+// so it must be rotated on the server.
+const PASS = process.env.SSH_PASS;
+if (!PASS) {
+  console.error('SSH_PASS is not set. Run: SSH_PASS=<server root password> node scripts/deploy.js');
+  process.exit(1);
+}
 
 const COMMANDS = [
   'cd /opt/car-price-checker && git pull origin main',

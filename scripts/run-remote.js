@@ -2,13 +2,18 @@
  * Run one command on the ileoto server:
  *   node scripts/run-remote.js "cd /opt/car-price-checker && npm run crawl-catalog"
  *
- * Credentials: SSH_PASS env var, falling back to the password in deploy.js.
+ * Credentials: the SSH_PASS environment variable, e.g.
+ *   SSH_PASS=... node scripts/run-remote.js "uptime"
  */
 const { Client } = require('ssh2');
 
 const HOST = '209.38.221.144';
 const USER = 'root';
-const PASS = process.env.SSH_PASS || 'HasloDo1!Ocean';
+const PASS = process.env.SSH_PASS;
+if (!PASS) {
+  console.error('SSH_PASS is not set. Run: SSH_PASS=<server root password> node scripts/run-remote.js "<command>"');
+  process.exit(1);
+}
 
 const command = process.argv.slice(2).join(' ');
 if (!command) {

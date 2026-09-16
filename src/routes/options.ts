@@ -6,7 +6,9 @@ import path from 'path';
 
 const router = Router();
 
-const CACHE_FILE = path.join(process.cwd(), 'data', 'options-cache.json');
+// Resolved from this module, not process.cwd(): pm2 runs the server with cwd=/root,
+// which used to put this cache in /root/data while the catalog lives in <app>/data.
+const CACHE_FILE = path.resolve(__dirname, '..', '..', 'data', 'options-cache.json');
 
 function loadCache(): Record<string, any> {
   try {
