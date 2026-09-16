@@ -1974,3 +1974,7 @@ Note in the PR/commit message the final counts from Step 3 and anything that nee
 - **Not covered here:** the samochody backend switching from its bundled `otomoto-models.json` to
   `GET /api/catalog` — that belongs to the third piece (motorcycle price search + backend), planned
   separately.
+- **Secrets seen while writing this plan** (both already committed to GitHub, neither introduced by
+  this work): the proxy login in `scripts/run-scrape-options.sh` and the server root password in
+  `scripts/deploy.js`. Both should move to environment variables and be rotated; `run-remote.js`
+  (Task 12) already prefers `SSH_PASS` from the environment.
