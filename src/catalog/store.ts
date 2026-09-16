@@ -9,11 +9,28 @@ export function catalogPath(dir: string = DEFAULT_DIR): string {
   return path.join(dir, 'catalog.json');
 }
 
-/** Read the catalog, or null when it is missing or unreadable. */
+/**
+ * Read the catalog, or null when there is no catalog yet or it is corrupt.
+ * A real filesystem error (permissions, IO, EISDIR, ...) is NOT the same as
+ * "no catalog yet" — it is logged loudly so it doesn't look like an empty
+ * catalog and get silently served as such.
+ */
 export function loadCatalog(dir: string = DEFAULT_DIR): Catalog | null {
+  const file = catalogPath(dir);
+  let raw: string;
   try {
-    return JSON.parse(fs.readFileSync(catalogPath(dir), 'utf8')) as Catalog;
-  } catch {
+    raw = fs.readFileSync(file, 'utf8');
+  } catch (err) {
+    const error = err as NodeJS.ErrnoException;
+    if (error.code === 'ENOENT') return null;
+    console.error(`[catalog] filesystem error reading ${file} (not a missing catalog):`, error);
+    return null;
+  }
+
+  try {
+    return JSON.parse(raw) as Catalog;
+  } catch (err) {
+    console.warn(`[catalog] catalog file ${file} is corrupt JSON, ignoring it:`, err);
     return null;
   }
 }

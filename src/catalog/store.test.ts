@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
@@ -17,6 +17,21 @@ describe('loadCatalog', () => {
   it('returns null for an unreadable catalog instead of throwing', () => {
     fs.writeFileSync(catalogPath(dir), '{ this is not json');
     expect(loadCatalog(dir)).toBeNull();
+  });
+  it('warns when the catalog file is corrupt JSON', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    fs.writeFileSync(catalogPath(dir), '{ this is not json');
+    expect(loadCatalog(dir)).toBeNull();
+    expect(warn).toHaveBeenCalled();
+    warn.mockRestore();
+  });
+  it('logs an error (and still returns null) for a real filesystem error, not a missing catalog', () => {
+    // Reading a directory as if it were a file throws EISDIR, not ENOENT.
+    fs.mkdirSync(catalogPath(dir));
+    const error = vi.spyOn(console, 'error').mockImplementation(() => {});
+    expect(loadCatalog(dir)).toBeNull();
+    expect(error).toHaveBeenCalled();
+    error.mockRestore();
   });
   it('reads back what was saved', () => {
     const c = emptyCatalog();
