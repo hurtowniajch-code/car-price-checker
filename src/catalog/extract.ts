@@ -46,7 +46,7 @@ function valuesOf(state: FilterState): FilterValue[] {
 export function extractCategory(html: string, crawledAt: string): CatalogCategory {
   const states = extractStates(html);
 
-  const makeState = states.find((s) => s.filterId === 'filter_enum_make' && !condition(s, 'filter_enum_make'));
+  const makeState = states.find((s) => s.filterId === 'filter_enum_make' && (!s.conditions || s.conditions.length === 0));
   if (!makeState) throw new Error('page carries no filter states for brands');
 
   const modelsByBrand = new Map<string, FilterValue[]>();

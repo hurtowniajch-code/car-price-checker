@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { extractCategory } from './extract';
-import { CAR_STATES, MOTO_STATES, pageHtml } from './__fixtures__/states';
+import { CAR_STATES, CAR_STATES_WITH_CONDITIONED_MAKE, MOTO_STATES, pageHtml } from './__fixtures__/states';
 
 const AT = '2026-09-16T10:00:00.000Z';
 
@@ -31,6 +31,11 @@ describe('extractCategory', () => {
 
   it('gives a brand with no model state an empty model list', () => {
     expect(cars.brands.find((b) => b.slug === 'doosan')!.models).toEqual([]);
+  });
+
+  it('ignores a conditioned filter_enum_make state and uses the unconditioned brand list', () => {
+    const withConditioned = extractCategory(pageHtml(CAR_STATES_WITH_CONDITIONED_MAKE), AT);
+    expect(withConditioned.brands.map((b) => b.slug)).toEqual(['volkswagen', 'fiat', 'doosan']);
   });
 
   it('handles a category without generations (motorcycles)', () => {

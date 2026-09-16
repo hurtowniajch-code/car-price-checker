@@ -33,6 +33,14 @@ export const CAR_STATES = [
   ]),
 ];
 
+/** Same as CAR_STATES but with an extra conditioned filter_enum_make state placed first. */
+export const CAR_STATES_WITH_CONDITIONED_MAKE = [
+  state('filter_enum_make', [{ filterId: 'filter_enum_body_type', value: 'kombi' }], [
+    value('audi', 'Audi', 10),
+  ]),
+  ...CAR_STATES,
+];
+
 export const MOTO_STATES = [
   state('filter_enum_make', [], [value('yamaha', 'Yamaha', 90)]),
   state('filter_enum_model', [{ filterId: 'filter_enum_make', value: 'yamaha' }], [
