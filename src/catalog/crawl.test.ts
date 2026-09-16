@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { crawlCatalog } from './crawl';
+import { crawlCatalog, MAX_BRAND_RETRIES } from './crawl';
 import { CAR_STATES, MOTO_STATES, pageHtml } from './__fixtures__/states';
 
 const AT = '2026-09-16T10:00:00.000Z';
@@ -100,5 +100,51 @@ describe('crawlCatalog', () => {
   it('fails the whole crawl when a category page cannot be fetched', async () => {
     const { fetchPage } = fetcherFor({ 'https://www.otomoto.pl/osobowe': carsHtml });
     await expect(crawlCatalog({ fetchPage, now: () => AT, previous: null })).rejects.toThrow(/motocykle/);
+  });
+
+  it('gives a retried brand a fresh timestamp instead of the category page timestamp', async () => {
+    const brokenStates = bigStates(CAR_STATES, 'car').filter(
+      (s) => !(s.filterId === 'filter_enum_model' && s.conditions?.[0]?.value === 'volkswagen'),
+    );
+    const brandStates = [
+      { filterId: 'filter_enum_make', conditions: [], values: [{ values: [{ id: 'volkswagen', name: 'Volkswagen', counter: 300 }] }] },
+      ...CAR_STATES.filter((s) => s.conditions?.[0]?.value === 'volkswagen'),
+    ];
+    const { fetchPage } = fetcherFor({
+      ...HEALTHY_PAGES,
+      'https://www.otomoto.pl/osobowe': pageHtml(brokenStates),
+      'https://www.otomoto.pl/osobowe/volkswagen': pageHtml(brandStates),
+    });
+
+    let i = 0;
+    const timestamps = ['2026-09-16T10:00:00.000Z', '2026-09-16T10:05:00.000Z', '2026-09-16T10:10:00.000Z'];
+    const now = () => timestamps[Math.min(i++, timestamps.length - 1)];
+
+    const result = await crawlCatalog({ fetchPage, now, previous: null });
+
+    const vw = result.catalog.categories.osobowe.brands.find((b) => b.slug === 'volkswagen')!;
+    expect(result.catalog.categories.osobowe.crawledAt).toBe(timestamps[0]);
+    expect(vw.crawledAt).toBe(timestamps[1]);
+    expect(vw.crawledAt).not.toBe(result.catalog.categories.osobowe.crawledAt);
+  });
+
+  it('caps brand retries per category at MAX_BRAND_RETRIES', async () => {
+    // Strip model states for the first 30 filler brands, so 30 brands fail
+    // "models_present" — more than the retry cap.
+    const manyFailing = bigStates(CAR_STATES, 'car').filter((s) => {
+      if (s.filterId !== 'filter_enum_model') return true;
+      const value = s.conditions?.[0]?.value ?? '';
+      const match = /^car(\d+)$/.exec(value);
+      return !(match && Number(match[1]) < 30);
+    });
+    const { fetchPage, calls } = fetcherFor({
+      ...HEALTHY_PAGES,
+      'https://www.otomoto.pl/osobowe': pageHtml(manyFailing),
+    });
+
+    await crawlCatalog({ fetchPage, now: () => AT, previous: null });
+
+    const brandRetryFetches = calls.filter((url) => url.startsWith('https://www.otomoto.pl/osobowe/car'));
+    expect(brandRetryFetches.length).toBe(MAX_BRAND_RETRIES);
   });
 });

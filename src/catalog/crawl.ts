@@ -17,6 +17,9 @@ export interface CrawlResult {
   problems: Problem[];
 }
 
+/** A corrupt category page could report hundreds of failing brands; cap the sequential re-fetches. */
+export const MAX_BRAND_RETRIES = 25;
+
 /** Read one brand from its own page — the fallback when the category page came back thin. */
 export async function refreshBrand(
   fetchPage: PageFetcher,
@@ -53,18 +56,28 @@ export async function crawlCatalog(options: CrawlOptions): Promise<CrawlResult> 
     const previousCategory = options.previous?.categories[categoryId] ?? null;
     let found = validateCategory(categoryId, catalog.categories[categoryId], previousCategory);
 
-    // Retry each failing brand from its own page.
+    // Retry each failing brand from its own page, capped so a corrupt page
+    // reporting hundreds of failing brands can't trigger hundreds of fetches.
     const failingBrands = [...new Set(found.filter((p) => p.brand).map((p) => p.brand!))];
-    for (const brandSlug of failingBrands) {
+    const brandsToRetry = failingBrands.slice(0, MAX_BRAND_RETRIES);
+    if (failingBrands.length > brandsToRetry.length) {
+      console.warn(
+        `[catalog] ${categoryId}: ${failingBrands.length} brands failed validation, ` +
+        `retrying only the first ${MAX_BRAND_RETRIES} (${failingBrands.length - brandsToRetry.length} skipped)`,
+      );
+    }
+    for (const brandSlug of brandsToRetry) {
       try {
-        const brand = await refreshBrand(options.fetchPage, categoryId, brandSlug, crawledAt);
+        // Fresh timestamp per retry, not the category page's crawledAt captured
+        // above — a brand re-read much later must not claim the older time.
+        const brand = await refreshBrand(options.fetchPage, categoryId, brandSlug, now());
         catalog = mergeBrand(catalog, categoryId, brand).catalog;
       } catch (err) {
         console.warn(`[catalog] retry for ${categoryId}/${brandSlug} failed: ${(err as Error).message}`);
       }
     }
 
-    if (failingBrands.length > 0) {
+    if (brandsToRetry.length > 0) {
       found = validateCategory(categoryId, catalog.categories[categoryId], previousCategory);
     }
     problems.push(...found);
