@@ -4,6 +4,7 @@ import { calculatePriceStats } from '../analysis/price-stats';
 import { SearchParams, EstimateResponse } from '../types';
 import { loadCatalog } from '../catalog/store';
 import { resolveCategory } from '../catalog/resolve-category';
+import { resolveModelSlug } from '../catalog/resolve-model';
 import { isCategoryId } from '../catalog/types';
 
 const router = Router();
@@ -29,6 +30,7 @@ function getCacheKey(params: SearchParams): string {
     damaged: params.damaged,
     trimPercent: params.trimPercent,
     category: params.category,
+    modelSlug: params.modelSlug,
   });
 }
 
@@ -55,6 +57,13 @@ router.post('/', async (req: Request, res: Response) => {
     return;
   }
 
+  // Which Otomoto section, and which model slug within it. Both come from the catalog, so
+  // a motorcycle is no longer searched for among passenger cars under a slug nobody lists.
+  const catalog = loadCatalog();
+  const resolvedCategory = isCategoryId(req.body.category)
+    ? req.body.category
+    : resolveCategory(brand, model, catalog);
+
   const searchParams: SearchParams = {
     brand: brand.trim(),
     model: model.trim(),
@@ -74,9 +83,9 @@ router.post('/', async (req: Request, res: Response) => {
     trimPercent: trimPercent !== undefined && trimPercent !== '' ? parseInt(trimPercent, 10) : 5,
     // Which Otomoto section to search. The caller may say; otherwise the catalog decides,
     // which is what stops motorcycles being looked for among passenger cars.
-    category: isCategoryId(req.body.category)
-      ? req.body.category
-      : resolveCategory(brand, model, loadCatalog()),
+    category: resolvedCategory,
+    // undefined when the catalog cannot place it, which leaves the old slugify behaviour.
+    modelSlug: resolveModelSlug(brand, model, resolvedCategory, catalog) ?? undefined,
   };
 
   // Check cache

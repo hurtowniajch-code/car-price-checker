@@ -24,7 +24,10 @@ const MODEL_SLUG_OVERRIDES: Record<string, Record<string, string>> = {
 export function buildOtomotoUrl(params: SearchParams, page: number = 1): string {
   const brandSlug = slugify(params.brand);
   const rawModelSlug = slugify(params.model);
-  const modelSlug = MODEL_SLUG_OVERRIDES[brandSlug]?.[rawModelSlug] ?? rawModelSlug;
+  // The catalog knows the real slug when it can place the vehicle ("YZF-R7" is listed as
+  // r7); otherwise fall back to the old behaviour, which is correct for ordinary cars.
+  const modelSlug =
+    params.modelSlug ?? MODEL_SLUG_OVERRIDES[brandSlug]?.[rawModelSlug] ?? rawModelSlug;
 
   // Was hardcoded to 'osobowe', which sent every motorcycle looking for itself among
   // passenger cars and finding nothing. Cars remain the default.

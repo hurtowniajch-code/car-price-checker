@@ -3,6 +3,8 @@ export interface SearchParams {
   model: string;
   /** Otomoto section to search. Defaults to passenger cars when absent. */
   category?: 'osobowe' | 'motocykle-i-quady';
+  /** The model slug Otomoto actually lists, when the catalog could name it. */
+  modelSlug?: string;
   generation?: string;
   generationYearFrom?: number;
   generationYearTo?: number;
