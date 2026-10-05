@@ -1,6 +1,8 @@
 export interface SearchParams {
   brand: string;
   model: string;
+  /** Otomoto section to search. Defaults to passenger cars when absent. */
+  category?: 'osobowe' | 'motocykle-i-quady';
   generation?: string;
   generationYearFrom?: number;
   generationYearTo?: number;

@@ -26,7 +26,10 @@ export function buildOtomotoUrl(params: SearchParams, page: number = 1): string 
   const rawModelSlug = slugify(params.model);
   const modelSlug = MODEL_SLUG_OVERRIDES[brandSlug]?.[rawModelSlug] ?? rawModelSlug;
 
-  const base = `https://www.otomoto.pl/osobowe/${brandSlug}/${modelSlug}`;
+  // Was hardcoded to 'osobowe', which sent every motorcycle looking for itself among
+  // passenger cars and finding nothing. Cars remain the default.
+  const section = params.category ?? 'osobowe';
+  const base = `https://www.otomoto.pl/${section}/${brandSlug}/${modelSlug}`;
 
   const query = new URLSearchParams();
 

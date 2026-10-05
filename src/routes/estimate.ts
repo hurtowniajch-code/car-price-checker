@@ -2,6 +2,9 @@ import { Router, Request, Response } from 'express';
 import { scrapeOtomotoFast } from '../scraper/otomoto-fetch-scraper';
 import { calculatePriceStats } from '../analysis/price-stats';
 import { SearchParams, EstimateResponse } from '../types';
+import { loadCatalog } from '../catalog/store';
+import { resolveCategory } from '../catalog/resolve-category';
+import { isCategoryId } from '../catalog/types';
 
 const router = Router();
 
@@ -25,6 +28,7 @@ function getCacheKey(params: SearchParams): string {
     transmission: params.transmission?.toLowerCase(),
     damaged: params.damaged,
     trimPercent: params.trimPercent,
+    category: params.category,
   });
 }
 
@@ -68,6 +72,11 @@ router.post('/', async (req: Request, res: Response) => {
     transmission: transmission || undefined,
     damaged: damaged || undefined,
     trimPercent: trimPercent !== undefined && trimPercent !== '' ? parseInt(trimPercent, 10) : 5,
+    // Which Otomoto section to search. The caller may say; otherwise the catalog decides,
+    // which is what stops motorcycles being looked for among passenger cars.
+    category: isCategoryId(req.body.category)
+      ? req.body.category
+      : resolveCategory(brand, model, loadCatalog()),
   };
 
   // Check cache
