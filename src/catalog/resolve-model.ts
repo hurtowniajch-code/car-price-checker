@@ -65,3 +65,25 @@ export function resolveModelSlug(
 
   return null;
 }
+
+/**
+ * The pattern that decides whether a listing's title is really this model.
+ *
+ * Otomoto ignores the model in the URL path and its model enum is body-specific, so the
+ * title is what we actually filter on. Matching the raw Informex name fails for anything
+ * written with separators: "YZF-R7" never appears in a title that reads "Yamaha R7" or
+ * "Yamaha YZF R7", so all fifteen scraped bikes were discarded after being found.
+ *
+ * Built from the catalog's slug when we have one, and the separators are made optional, so
+ * `r-1250-gs` matches "R 1250 GS", "R1250GS" and "R-1250-GS" alike.
+ */
+export function buildModelTitlePattern(model: string, modelSlug?: string | null): RegExp {
+  const source = (modelSlug || model || '').trim().toLowerCase();
+  const escape = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const body = source
+    .split(/[-\s]+/)
+    .filter(Boolean)
+    .map(escape)
+    .join('[-\\s]*');
+  return new RegExp(`(^|[^a-z0-9])${body}([^a-z0-9]|$)`, 'i');
+}

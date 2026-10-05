@@ -4,7 +4,7 @@ import { calculatePriceStats } from '../analysis/price-stats';
 import { SearchParams, EstimateResponse } from '../types';
 import { loadCatalog } from '../catalog/store';
 import { resolveCategory } from '../catalog/resolve-category';
-import { resolveModelSlug } from '../catalog/resolve-model';
+import { resolveModelSlug, buildModelTitlePattern } from '../catalog/resolve-model';
 import { isCategoryId } from '../catalog/types';
 
 const router = Router();
@@ -110,8 +110,10 @@ router.post('/', async (req: Request, res: Response) => {
     // server-side model filter isn't reliable. Match the model token in the listing
     // title instead: keeps all A4 bodies, excludes A6 / S4 / RS4 / Q5 / etc.
     if (searchParams.model) {
-      const token = searchParams.model.trim().toLowerCase().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-      const modelRe = new RegExp(`(^|[^a-z0-9])${token}([^a-z0-9]|$)`, 'i');
+      // Built from the catalog's slug when we have one: no Otomoto title says "YZF-R7",
+      // they say "Yamaha R7" or "Yamaha YZF R7", and matching the raw Informex name threw
+      // away every bike the scraper had just found.
+      const modelRe = buildModelTitlePattern(searchParams.model, searchParams.modelSlug);
       listings = listings.filter((l) => modelRe.test(l.title));
     }
 

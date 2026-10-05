@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { resolveModelSlug } from './resolve-model';
+import { resolveModelSlug, buildModelTitlePattern } from './resolve-model';
 import { Catalog } from './types';
 
 const brand = (slug: string, models: Array<[string, number]>) => ({
@@ -71,5 +71,34 @@ describe('resolveModelSlug', () => {
   it('gives up on an unknown brand or a missing catalog', () => {
     expect(resolveModelSlug('zongshen', 'ZS125', 'motocykle-i-quady', catalog())).toBeNull();
     expect(resolveModelSlug('yamaha', 'YZF-R7', 'motocykle-i-quady', null)).toBeNull();
+  });
+});
+
+describe('buildModelTitlePattern', () => {
+  const matches = (model: string, slug: string | null, title: string) =>
+    buildModelTitlePattern(model, slug).test(title);
+
+  // Fifteen R7s were scraped and then dropped, because no Otomoto title says "YZF-R7".
+  it('recognises the bike however the title writes it', () => {
+    expect(matches('YZF-R7', 'r7', 'Yamaha R7 ABS 2023')).toBe(true);
+    expect(matches('YZF-R7', 'r7', 'Yamaha YZF R7 Salon Polska')).toBe(true);
+    expect(matches('YZF-R7', 'r7', 'YAMAHA YZF-R7')).toBe(true);
+  });
+
+  it('still refuses a different bike from the same family', () => {
+    expect(matches('YZF-R7', 'r7', 'Yamaha YZF R1 2020')).toBe(false);
+    expect(matches('YZF-R7', 'r7', 'Yamaha R6')).toBe(false);
+  });
+
+  it('treats spaces, hyphens and nothing at all as the same separator', () => {
+    for (const title of ['BMW R 1250 GS Adventure', 'BMW R1250GS', 'BMW R-1250-GS']) {
+      expect(matches('R 1250 GS Adventure', 'r-1250-gs', title), title).toBe(true);
+    }
+  });
+
+  it('behaves as before for ordinary cars', () => {
+    expect(matches('Golf', 'golf', 'Volkswagen Golf VII 1.4 TSI')).toBe(true);
+    expect(matches('Golf', 'golf', 'Volkswagen Polo')).toBe(false);
+    expect(matches('Golf', null, 'Volkswagen Golf VII')).toBe(true);
   });
 });
