@@ -6,12 +6,19 @@ import { loadCatalog } from '../catalog/store';
 import { resolveCategory } from '../catalog/resolve-category';
 import { resolveModelSlug, buildModelTitlePattern } from '../catalog/resolve-model';
 import { isCategoryId } from '../catalog/types';
+import { EstimateCache } from '../cache/estimate-cache';
+import path from 'path';
 
 const router = Router();
 
-// Simple in-memory cache (10-minute TTL)
-const cache = new Map<string, { data: EstimateResponse; timestamp: number }>();
-const CACHE_TTL = 10 * 60 * 1000;
+// Kept for a day and written to disk: every miss costs several Otomoto pages through a
+// metered proxy, and a bulk valuation asks the same question over and over - twenty Golfs
+// of the same year and mileage band are one search, not twenty.
+const cache = new EstimateCache<EstimateResponse>(
+  path.resolve(__dirname, '..', '..', 'data', 'estimate-cache.json')
+);
+setInterval(() => cache.save(), 60_000).unref();
+process.on('exit', () => cache.save());
 
 function getCacheKey(params: SearchParams): string {
   return JSON.stringify({
@@ -91,9 +98,9 @@ router.post('/', async (req: Request, res: Response) => {
   // Check cache
   const cacheKey = getCacheKey(searchParams);
   const cached = cache.get(cacheKey);
-  if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
+  if (cached) {
     console.log('[API] Returning cached result');
-    res.json(cached.data);
+    res.json(cached);
     return;
   }
 
@@ -173,15 +180,8 @@ router.post('/', async (req: Request, res: Response) => {
       scrapedAt: new Date().toISOString(),
     };
 
-    // Store in cache
-    cache.set(cacheKey, { data: response, timestamp: Date.now() });
-
-    // Clean old cache entries
-    for (const [key, entry] of cache.entries()) {
-      if (Date.now() - entry.timestamp > CACHE_TTL) {
-        cache.delete(key);
-      }
-    }
+    // Expiry and the size cap are the cache's own business now.
+    cache.set(cacheKey, response);
 
     res.json(response);
   } catch (error: any) {

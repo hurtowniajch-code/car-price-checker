@@ -12,7 +12,10 @@ import { SearchParams, ListingData } from '../types';
 import { buildOtomotoUrl } from './url-builder';
 import { scrapeOtomoto as puppeteerScrape } from './otomoto-scraper';
 
-const MAX_PAGES = 5;
+// Two pages, not five. Each page is ~209 KB through a metered residential proxy, and the
+// median of 64 listings is the same number as the median of 160 - the extra three pages
+// bought precision nobody can see and emptied a 10 GB plan in a fortnight.
+const MAX_PAGES = 2;
 const PAGE_SIZE = 32;
 
 const USER_AGENTS = [
